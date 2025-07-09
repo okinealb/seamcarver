@@ -7,12 +7,12 @@ It also supports an interactive mode for easier use.
 """
 
 import argparse
-from seam_carving import SeamCarver
+from .core import SeamCarver
 
 def main():
     # Create the main argument parser
     parser = argparse.ArgumentParser(
-        prog='seam_carving',
+        prog='seamcarver',
         description="A command-line tool for seam carving images.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     

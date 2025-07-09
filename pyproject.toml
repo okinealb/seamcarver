@@ -6,7 +6,7 @@ requires = ["setuptools>=61"]
 
 # Project metadata
 [project]
-name = "seam_carving"
+name = "seamcarver"
 version = "0.0.1"
 description = "A command-line Python tool for image resizing using seam carving."
 authors = [{ name = "Albert Okine", email = "okinealb@grinnell.edu" }]
@@ -20,11 +20,11 @@ keywords = []
 
 # URLs for the main project repository
 [project.urls]
-Repository = "https://github.com/okinealb/seam_carving.git"
+Repository = "https://github.com/okinealb/seamcarver.git"
 
 # Optional scripts to run the command-line interface
 [project.scripts]
-seam_carving = "seam_carving.cli:main"
+seamcarver = "seamcarver.cli:main"
 
 # Optional dependencies for development and testing
 [project.optional-dependencies]

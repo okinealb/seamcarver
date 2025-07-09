@@ -13,7 +13,7 @@ To use an energy method, instantiate it and pass it to the SeamCarver class.
 
 Example:
 
-    from seam_carving.methods import SobelEnergy, LaplacianEnergy
+    from seamcarver import SobelEnergy, LaplacianEnergy
     energy_method = SobelEnergy()
     # or
     energy_method = LaplacianEnergy()
