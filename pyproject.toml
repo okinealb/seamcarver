@@ -25,3 +25,13 @@ Repository = "https://github.com/okinealb/seam_carving.git"
 # Optional scripts to run the command-line interface
 [project.scripts]
 seam_carving = "seam_carving.cli:main"
+
+# Optional dependencies for development and testing
+[project.optional-dependencies]
+test = [
+    "pytest",
+]
+
+# Configuration for setuptools to exclude testing packages
+[tool.setuptools.packages.find]
+exclude = ["tests*", "test*"]
