@@ -11,7 +11,7 @@ For more information, see the [Wikipedia article](https://en.wikipedia.org/wiki/
 import numpy as np
 # Import project specific packages
 from ..interfaces import EnergyMethod
-from ..core import VERTICAL
+from ..constants import VERTICAL, HORIZONTAL
 
 class SobelEnergy(EnergyMethod):
     """Sobel energy method for seam carving.
@@ -20,12 +20,28 @@ class SobelEnergy(EnergyMethod):
     It inherits from the EnergyMethod interface.
     """
 
-    def find_seam(self, image: np.ndarray, direction = VERTICAL) -> np.ndarray:
-        """Find and return a directional seam as a list of indices."""
-        # Implementation of seam finding using Sobel energy
+    def find_seam(self, image: np.ndarray, direction: int = VERTICAL) -> np.ndarray:
+        """
+        Find and return a directional seam as a list of indices.
+
+        Parameters:
+        - image (np.ndarray): The input image.
+        - direction (int): The direction of the seam (VERTICAL or HORIZONTAL).
+
+        Returns:
+        - np.ndarray: The indices of the seam.
+        """
         raise NotImplementedError("Sobel seam finding not implemented yet")
 
-    def compute_energy(self, image: np.ndarray, direction = VERTICAL) -> np.ndarray:
-        """Compute the energy map of the image using the Sobel operator."""
-        # Implementation of energy computation using Sobel operator
+    def compute_energy(self, image: np.ndarray, direction: int = VERTICAL) -> np.ndarray:
+        """
+        Compute the energy map of the image using the Sobel operator.
+
+        Parameters:
+        - image (np.ndarray): The input image.
+        - direction (int): The direction of the seam (VERTICAL or HORIZONTAL).
+
+        Returns:
+        - np.ndarray: The computed energy map.
+        """
         raise NotImplementedError("Sobel energy computation not implemented yet")

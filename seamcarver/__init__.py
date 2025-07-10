@@ -1,7 +1,7 @@
 """
-Tools for content-aware image resizing using the seam carving algorithm.
-It exposes the `SeamCarver` class as the main interface, allowing users to resize images
-while preserving important visual content.
+Tools for content-aware image resizing using the seam carving algorithm. It
+exposes the `SeamCarver` class as the main interface, allowing users to
+resize images while preserving important visual content.
 
 Intended Usage:
 ---------------
@@ -25,9 +25,9 @@ Modules:
 """
 
 # Import direction constants
-from .core import VERTICAL, HORIZONTAL
-# Import the SeamCarver class from the core module
+from .constants import VERTICAL, HORIZONTAL
+
+# Expose the main class and interfaces
 from .core import SeamCarver
 from .interfaces import EnergyMethod
-# Import energy methods
 from .methods import SobelEnergy, LaplacianEnergy

@@ -12,49 +12,66 @@ For more information on seam carving, refer to the
 from PIL import Image
 import numpy as np
 # Import project specific packages
+from .constants import VERTICAL, HORIZONTAL
 from .interfaces import EnergyMethod
 from .methods import SobelEnergy
-
-# Constants for seam direction to be used internally
-VERTICAL: int = 0
-"""int: Indicates a vertical seam direction (top to bottom)."""
-
-HORIZONTAL: int = 1
-"""int: Indicates a horizontal seam direction (left to right)."""
 
 # Main class for seam carving operations
 class SeamCarver:
     """A class to implement the seam carving algorithm for image resizing."""
 
-    def __init__(self, image_path: str, method: EnergyMethod = NotImplemented):
-        """Load the image and initialize other parameters"""
-        
-        # Setup object attributes
-        self.image: Image.Image = Image.open(image_path).convert("RGB")
-        self.rows, self.cols = self.image.size
-        self.method: EnergyMethod = method if method else SobelEnergy()
-        
-        raise NotImplementedError("SeamCarver method not implemented yet")
+    def __init__(
+        self,
+        image_path: str,
+        method: EnergyMethod = SobelEnergy(),
+        verbose: bool = False
+    ):
+        """Load the image and initialize other parameters."""
+        # Check for exceptions during initialization
+        try:
+            # Initialize the object with the image and other parameters
+            with Image.open(image_path) as img:
+                self.image = np.array(img.convert("RGB"))
+                """np.ndarray: image data as a numpy array."""
+                self.rows, self.cols = self.image.shape[:2]
+                """int: rows (height) and cols (width) of the image."""
+                self.method = method
+                """EnergyMethod: method to calculate the energy of the image."""
+                self.verbose = verbose
+                """bool: flag for verbose output."""
+                
+        # Handle file not found and other exceptions
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Image file not found: {image_path}")
+        except Exception as e:
+            raise ValueError(f"Error initializing SeamCarver: {e}")
 
     def resize(self, height: int, width: int) -> None:
-        """Resize the image to the specified height and width"""
-        raise NotImplementedError("SeamCarver method not implemented yet")
+        """Resize the image to the specified height and width."""
+        # Remove seams until the image reaches the desired dimensions
+        self.remove(num_seams=self.cols - width, direction=VERTICAL)
+        self.remove(num_seams=self.rows - height, direction=HORIZONTAL)
+        # Update the dimensions after resizing
+        self.rows, self.cols = height, width
 
     def remove(self, num_seams: int = 1, direction: int = VERTICAL) -> None:
-        """Remove the minimum seam from the image"""
-        raise NotImplementedError("SeamCarver method not implemented yet")
+        """Remove the minimum seam from the image."""
+        for _ in range(num_seams):
+            seam = self.method.find_seam(self.image, direction)
+            pass
   
-    def highlight(self, num_seams: int = 1, direction: int = VERTICAL) -> None:
-        """Highlight the minimum seam in the image"""
-        raise NotImplementedError("SeamCarver method not implemented yet")
-  
-    def save(self, output_path: str = 'output.jpg') -> None:
-        """Save the carved image to the specified path"""
-        raise NotImplementedError("SeamCarver method not implemented yet")
+    def highlight(self, direction: int = VERTICAL) -> None:
+        """Highlight the minimum seam in the image."""
+        seam = self.method.find_seam(self.image, direction)
+        pass
 
+    def save(self, output_path: str = 'output.jpg') -> None:
+        """Save the carved image to the specified path."""    
+        Image.fromarray(self.image).save(output_path)
+        
     def display(self) -> None:
-        """Display the current state of the image"""
-        raise NotImplementedError("SeamCarver method not implemented yet")
+        """Display the current state of the image."""
+        Image.fromarray(self.image).show()
     
 # Example usage of the SeamCarver class
 if __name__ == "__main__":

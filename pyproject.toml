@@ -10,13 +10,16 @@ name = "seamcarver"
 version = "0.0.1"
 description = "A command-line Python tool for image resizing using seam carving."
 authors = [{ name = "Albert Okine", email = "okinealb@grinnell.edu" }]
-license = "MIT"
-readme = "README.md"
+license = { file = "LICENSE" }
+readme = { file = "README.md", content-type = "text/markdown" }
 dependencies = [
     "numpy",
     "Pillow",
 ]
-keywords = []
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
 
 # URLs for the main project repository
 [project.urls]
@@ -34,4 +37,4 @@ test = [
 
 # Configuration for setuptools to exclude testing packages
 [tool.setuptools.packages.find]
-exclude = ["tests*", "test*"]
+exclude = ["tests*", "test*", "build*"]
