@@ -15,6 +15,7 @@ import numpy as np
 from .constants import VERTICAL, HORIZONTAL
 from .interfaces import EnergyMethod
 from .methods import SobelEnergy
+from . import utils
 
 # Main class for seam carving operations
 class SeamCarver:
@@ -58,12 +59,21 @@ class SeamCarver:
         """Remove the minimum seam from the image."""
         for _ in range(num_seams):
             seam = self.method.find_seam(self.image, direction)
-            pass
+            mask = utils.mask(seam, (self.rows, self.cols), direction)
+            # Apply the mask and reshape the image accordingly
+            if direction == VERTICAL:
+                self.image = self.image[mask].reshape(self.rows, self.cols - 1, 3)
+            elif direction == HORIZONTAL:
+                self.image = self.image[mask].reshape(self.rows - 1, self.cols, 3)
+            else:
+                raise ValueError("Invalid direction specified. Use VERTICAL or HORIZONTAL.")
   
     def highlight(self, direction: int = VERTICAL) -> None:
         """Highlight the minimum seam in the image."""
         seam = self.method.find_seam(self.image, direction)
-        pass
+        mask = utils.mask(seam, (self.rows, self.cols), direction)
+        # Highlight the seam in red
+        self.image[~mask] = np.array([255, 0, 0])
 
     def save(self, output_path: str = 'output.jpg') -> None:
         """Save the carved image to the specified path."""    
