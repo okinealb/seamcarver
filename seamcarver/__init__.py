@@ -24,10 +24,21 @@ Modules:
 - method: Provides built-in energy calculation methods (e.g., Sobel, Laplacian).
 """
 
+# Load metadata from the package
+import importlib.metadata
+metadata = importlib.metadata.metadata("seamcarver")
+__version__ = metadata["Version"]
+__summary__ = metadata["Summary"]
+__license__ = metadata["License"]
+__author__ = metadata["Author-email"]
+__description__ = metadata["Description"]
+
 # Import direction constants
 from .constants import VERTICAL, HORIZONTAL
 
-# Expose the main class and interfaces
+# Expose the main class
 from .core import SeamCarver
-from .interfaces import EnergyMethod
-from .methods import SobelEnergy, LaplacianEnergy
+
+# Import the energy interface and implemented methods
+from .methods import EnergyMethod
+from .methods import LaplacianEnergy, SobelEnergy, GradientEnergy

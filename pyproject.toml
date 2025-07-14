@@ -7,18 +7,40 @@ requires = ["setuptools>=61"]
 # Project metadata
 [project]
 name = "seamcarver"
-version = "0.0.1"
+version = "0.1.0"
 description = "A command-line Python tool for image resizing using seam carving."
 authors = [{ name = "Albert Okine", email = "okinealb@grinnell.edu" }]
 license = { file = "LICENSE" }
 readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.8"
 dependencies = [
     "numpy",
     "Pillow",
+    "scipy",
 ]
 classifiers = [
-    "Programming Language :: Python :: 3",
+    # Project classification
+    "Development Status :: 3 - Pre-Alpha",
+    # Audience
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Developers",
+    # Environment
+    "Environment :: Console",
+    # License
+    "License :: OSI Approved :: MIT License",
+    # OS Compatibility
     "Operating System :: OS Independent",
+    # Programming Language
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    # Topics
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Utilities",
 ]
 
 # URLs for the main project repository
@@ -33,6 +55,7 @@ seamcarver = "seamcarver.cli:main"
 [project.optional-dependencies]
 test = [
     "pytest",
+    "pytest-benchmark",
 ]
 
 # Configuration for setuptools to exclude testing packages
