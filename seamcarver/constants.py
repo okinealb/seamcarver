@@ -12,3 +12,5 @@ HORIZONTAL: int = 0
 """int: Indicates a horizontal seam direction (left to right)."""
 VERTICAL: int = 1
 """int: Indicates a vertical seam direction (top to bottom)."""
+BORDER_ENERGY: int = 1000
+"""int: Default energy value for border pixels in the energy map."""
