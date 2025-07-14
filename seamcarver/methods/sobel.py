@@ -9,39 +9,23 @@ For more information, see the [Wikipedia article](https://en.wikipedia.org/wiki/
 
 # Import standard library packages
 import numpy as np
+from scipy.ndimage import sobel
 # Import project specific packages
-from ..interfaces import EnergyMethod
-from ..constants import VERTICAL, HORIZONTAL
+from .interface import EnergyMethod
 
 class SobelEnergy(EnergyMethod):
     """Sobel energy method for seam carving.
     
-    This class implements the Sobel operator to compute the energy map of an image.
-    It inherits from the EnergyMethod interface.
+    This class implements the Sobel operator to compute the energy map of an
+    image. It inherits from the EnergyMethod interface.
     """
 
-    def find_seam(self, image: np.ndarray, direction: int = VERTICAL) -> np.ndarray:
-        """
-        Find and return a directional seam as a list of indices.
-
-        Parameters:
-        - image (np.ndarray): The input image.
-        - direction (int): The direction of the seam (VERTICAL or HORIZONTAL).
-
-        Returns:
-        - np.ndarray: The indices of the seam.
-        """
-        raise NotImplementedError("Sobel seam finding not implemented yet")
-
-    def compute_energy(self, image: np.ndarray, direction: int = VERTICAL) -> np.ndarray:
-        """
-        Compute the energy map of the image using the Sobel operator.
-
-        Parameters:
-        - image (np.ndarray): The input image.
-        - direction (int): The direction of the seam (VERTICAL or HORIZONTAL).
-
-        Returns:
-        - np.ndarray: The computed energy map.
-        """
-        raise NotImplementedError("Sobel energy computation not implemented yet")
+    def compute_energy(self, image) -> np.ndarray:
+        """Compute the energy map of the image using the Sobel operator."""
+        # Convert the image to grayscale, then apply the Sobel operator
+        grayscale_image = np.mean(image, axis=2).astype(np.float32)
+        gradient_x = sobel(grayscale_image, axis=1, mode='constant', cval=255)
+        gradient_y = sobel(grayscale_image, axis=0, mode='constant', cval=255)
+        energy_tbl = np.sqrt(gradient_x**2 + gradient_y**2).astype(np.float16)
+        
+        return energy_tbl # Return the computed energy table
