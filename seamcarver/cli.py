@@ -8,17 +8,20 @@ It also supports an interactive mode for easier use.
 
 # Import standard library packages
 import argparse
+import logging
 import sys
 # Import project specific packages
 from .core import SeamCarver
 from .constants import VERTICAL, HORIZONTAL
+from .logger import setup_cli_logging, get_logger
 
 def main():
     # Create the main argument parser
     parser = argparse.ArgumentParser(
         prog='seamcarver',
         description="A command-line tool for seam carving images.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     
     # Add global arguments
     parser.add_argument('image', type=str, default='examples/sample.jpg',
@@ -62,34 +65,92 @@ def main():
     
     # Get the command line inputs
     args = parser.parse_args()
+    
+    # Set up logging based on the command line arguments, then get the logger
+    setup_cli_logging(
+        verbose=args.verbose,
+        quiet=args.quiet,
+        log_file=args.log_file,
+    )
+    logger = get_logger(__name__)
 
+    # Initialize the SeamCarver with the provided image
     try:
-        # Initialize the SeamCarver with the provided image
+        logger.info(f"Loading image from {args.image}...")
         carver = SeamCarver(args.image, verbose=args.verbose)
+        logger.debug(f"Image loaded with shape {carver.shape}.")
     except Exception as e:
+        handle_error(e, logger, verbose=args.verbose)
         sys.exit(1)
 
     if args.command == 'resize':
+        logger.info(f"Resizing image to {args.height}x{args.width}...")
         carver.resize(height=args.height, width=args.width)
+        logger.info("Image resized successfully.")
+        logger.info(f"Saving output image to {args.output}...")
         try:
             carver.save(output_path=args.output)
+            logger.info("Output image saved successfully.")
         except Exception as e:
+            handle_error(e, logger, verbose=args.verbose)
             sys.exit(1)
         
     elif args.command == 'remove':
         # Set the seam direction based on the command
         direction = VERTICAL if args.direction == 'vertical' else HORIZONTAL
+        
+        logger.info(f"Removing {args.count} seams in {args.direction} direction...")
         carver.remove(num_seams=args.count, direction=direction)
+        logger.info("Seams removed successfully.")
+        logger.info(f"Saving output image to {args.output}...")
         try:
             carver.save(output_path=args.output)
+            logger.info("Output image saved successfully.")
         except Exception as e:
+            handle_error(e, logger, verbose=args.verbose)
             sys.exit(1)
         
     elif args.command == 'highlight':
         # Set the seam direction based on the command
         direction = VERTICAL if args.direction == 'vertical' else HORIZONTAL
+        
+        logger.info(f"Highlighting {args.count} seams in {args.direction} direction...")
         carver.highlight(direction=direction)
+        logger.info("Seams highlighted successfully.")
+        logger.debug(f"Displaying highlighted image...")
         carver.display()
+        logger.debug("Image display completed.")
+    
+def handle_error(
+    error: Exception,
+    logger: logging.Logger,
+    verbose: bool = False,
+) -> None:
+    """Handle errors with logger messages."""
+    
+    if isinstance(error, FileNotFoundError):
+        logger.error(f"File not found: {error.filename}")
+        logger.error("Please check the file path and try again.")
+    elif isinstance(error, PermissionError):
+        logger.error(f"Permission denied: {error.filename}")
+        logger.error("Please check file permissions or run the command with elevated privileges.")
+    elif isinstance(error, ValueError):
+        if "Could not load image from path" in str(error):
+            logger.error("Invalid image file format.")
+            logger.error("Use one of the PIL supported formats: PNG, JPEG, BMP, etc.")
+        else:
+            logger.error(f"Invalid input: {error}")
+    elif isinstance(error, MemoryError):
+        logger.error("Not enough memory to process the image.")
+        logger.error("Try using a smaller image or increasing available memory.")
+    elif isinstance(error, KeyboardInterrupt):
+        logger.warning("Operation cancelled by user.")
+    else:
+        logger.error("An unexpected error occurred.")
+        if verbose:
+            logger.debug(f"Error details: {error}")
+        else: 
+            logger.error("Use -v/--verbose for more details.")
     
 if __name__ == "__main__":
     main()
