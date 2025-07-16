@@ -27,3 +27,6 @@ from .interface import EnergyMethod
 from .laplacian import LaplacianEnergy
 from .gradient import GradientEnergy
 from .sobel import SobelEnergy
+
+# Define the public API of this module
+__all__ = ['EnergyMethod', 'LaplacianEnergy', 'GradientEnergy', 'SobelEnergy']

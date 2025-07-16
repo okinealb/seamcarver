@@ -10,6 +10,13 @@ class SeamCalculator:
     
     This class is responsible for calculating the seam based on the energy
     of the image and the specified direction (vertical or horizontal).
+    
+    Attributes:
+        image (np.ndarray): Image data as a numpy array.
+        energy_tbl (np.ndarray): Energy table of the image.
+        energy_cst (np.ndarray): Energy cost table for seam calculation.
+        seam (np.ndarray): Indices of the seam in the image.
+        method (EnergyMethod): Method to calculate the energy of the image.
     """
 
     image: np.ndarray
@@ -20,6 +27,8 @@ class SeamCalculator:
     """np.ndarray: energy cost table for seam calculation."""
     seam: np.ndarray
     """np.ndarray: indices of the seam in the image."""
+    method: EnergyMethod
+    """EnergyMethod: method to calculate the energy of the image."""
 
     def __init__(
         self,
@@ -87,11 +96,9 @@ class SeamCalculator:
             # Convert seam index to signed integer to avoid wrapping
             seam_index = int(self.seam[i+1])
             
-            # Ensure bounds are valid
+            # Find the bounds for the left and right neighbors
             left_bound = max(0, seam_index - 1)
             right_bound = min(self.image.shape[1], seam_index + 2)
-            
-            # Get the current row's cost within the bounds
             loc = np.argmin(self.energy_cst[i, left_bound:right_bound])
             
             # Update the seam index

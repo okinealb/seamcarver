@@ -42,3 +42,7 @@ from .core import SeamCarver
 # Import the energy interface and implemented methods
 from .methods import EnergyMethod
 from .methods import LaplacianEnergy, SobelEnergy, GradientEnergy
+
+# Define the public API of this module
+__all__ = ["SeamCarver", "VERTICAL", "HORIZONTAL", "EnergyMethod",
+           "LaplacianEnergy", "SobelEnergy", "GradientEnergy"]
