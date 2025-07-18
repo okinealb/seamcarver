@@ -7,27 +7,39 @@ It also supports an interactive mode for easier use.
 """
 
 # Import standard library packages
-import argparse
+import argparse as ap
 import logging
 import sys
+from typing import Sequence
 # Import project specific packages
 from .core import SeamCarver
 from .constants import VERTICAL, HORIZONTAL
 from .logger import setup_cli_logging, get_logger
 
-def main():
+def main(input: Sequence[str] | None = None) -> None:
+    # Create argument parsers for different command options
+    save_parser = ap.ArgumentParser(add_help=False)
+    save_parser.add_argument('-o', '--output', type=str, default='output.jpg',
+        help='Path to save the output image after seam carving.')
+    
+    direction_parser = ap.ArgumentParser(add_help=False)
+    direction_parser.add_argument('-d', '--direction', choices=['vertical', 'horizontal'],
+        default='vertical',
+        metavar='DIR', type=str.lower,
+        help='Direction of seams to process (vertical or horizontal).')
+    direction_parser.add_argument('-c', '--count', type=int, default=1,
+        help='Number of seams to process (default: 1).')
+    
     # Create the main argument parser
-    parser = argparse.ArgumentParser(
+    parser = ap.ArgumentParser(
         prog='seamcarver',
         description="A command-line tool for seam carving images.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        formatter_class=ap.ArgumentDefaultsHelpFormatter,
     )
     
     # Add global arguments
-    parser.add_argument('image', type=str, default='examples/sample.jpg',
+    parser.add_argument('input', type=str,
         help='Path to the input image file for seam carving.')
-    parser.add_argument('-o', '--output', type=str, default='output.jpg',
-        help='Path to save the output image after seam carving.',)
     parser.add_argument('--log-file', type=str, default=None,
         help='Path to save the log file. If not specified, logs will be printed to stderr.',)
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -41,30 +53,25 @@ def main():
     # Add the resize command
     resize_parser = subparsers.add_parser('resize',
         help='Resize the image by removing seams.',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        parents=[save_parser],
+        formatter_class=ap.ArgumentDefaultsHelpFormatter)
     resize_parser.add_argument('height', type=int, help='Output height.')
     resize_parser.add_argument('width', type=int, help='Output width.')
     
     # Add the remove command
     remove_parser = subparsers.add_parser('remove',
         help='Remove seams from the image.',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    remove_parser.add_argument('direction', choices=['vertical', 'horizontal'],
-        help='Direction of seams to remove (vertical or horizontal).')
-    remove_parser.add_argument('count', type=int, default=1,
-        help='Number of seams to remove.')
+        parents=[save_parser, direction_parser],
+        formatter_class=ap.ArgumentDefaultsHelpFormatter)
     
     # Add the highlight command
     highlight_parser = subparsers.add_parser('highlight',
         help='Highlight seams in the image.',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    highlight_parser.add_argument('direction', choices=['vertical', 'horizontal'],
-        help='Direction of seams to highlight (vertical or horizontal).')
-    highlight_parser.add_argument('count', type=int, default=1,
-        help='Number of seams to highlight.')
+        parents=[direction_parser],
+        formatter_class=ap.ArgumentDefaultsHelpFormatter)
     
     # Get the command line inputs
-    args = parser.parse_args()
+    args = parser.parse_args(input)
     
     # Set up logging based on the command line arguments, then get the logger
     setup_cli_logging(
@@ -76,8 +83,8 @@ def main():
 
     # Initialize the SeamCarver with the provided image
     try:
-        logger.info(f"Loading image from {args.image}...")
-        carver = SeamCarver(args.image, verbose=args.verbose)
+        logger.info(f"Loading image from {args.input}...")
+        carver = SeamCarver(args.input, verbose=args.verbose)
         logger.debug(f"Image loaded with shape {carver.shape}.")
     except Exception as e:
         handle_error(e, logger, verbose=args.verbose)
@@ -153,4 +160,4 @@ def handle_error(
             logger.error("Use -v/--verbose for more details.")
     
 if __name__ == "__main__":
-    main()
+    main(input=None)
