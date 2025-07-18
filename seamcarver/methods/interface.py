@@ -21,6 +21,10 @@ class EnergyMethod(ABC):
         >>> class CustomEnergy(EnergyMethod):
         ...     def compute_energy(self, image: np.ndarray) -> np.ndarray:
         ...         return np.random.random(image.shape[:2])
+        
+    Note: This class assumes that the image is always in a vertical orientation
+    for seam carving. For horizontal seams, the image should be transposed
+    before passing it to the methods.
     """
     
     @abstractmethod

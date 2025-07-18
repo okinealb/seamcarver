@@ -11,17 +11,29 @@ package includes built-in energy methods such as `SobelEnergy` and
 `LaplacianEnergy`, or users can implement their own by subclassing
 `EnergyMethod`.
 
-Example:
-
-    carver = SeamCarver("path/to/image.jpg", energy_method=SobelEnergy())
-    resized_image = carver.resize(width=200, height=150)
-    resized_image.save("resized.jpg")
+Basic Usage:
+---------------
+    >>> from seamcarver import SeamCarver, SobelEnergy
+    >>> carver = SeamCarver("path/to/image.jpg", energy_method=SobelEnergy())
+    >>> resized_image = carver.resize(width=200, height=150)
+    >>> resized_image.save("resized.jpg")
 
 Modules:
 --------
-- core: Contains the `SeamCarver` class for performing seam carving operations.
-- interfaces: Defines the `EnergyMethod` interface for custom energy calculations.
-- method: Provides built-in energy calculation methods (e.g., Sobel, Laplacian).
+- `core`: Contains the `SeamCarver` class for performing seam carving operations.
+- `methods`: Defines the `EnergyMethod` interface and some energy table computation methods.
+    - `EnergyMethod`: Interface for energy calculation methods.
+    - `GradientEnergy`: Calculation using gradient magnitude.
+    - `LaplacianEnergy`: Calculation using Laplacian filter.
+    - `SobelEnergy`: Calculation using Sobel filter.
+- `constants`: Contains constants used internally (`VERTICAL`, `HORIZONTAL`, `BORDER_ENERGY`).
+- `calculator`: Contains the `SeamCalculator` class for seam calculation.
+
+Architecture:
+---------------
+    The SeamCarver class handles both vertical and horizontal operations by
+    transposing the image for horizontal seams. All other components assume
+    vertical-only operations for simplicity.
 """
 
 # Load metadata from the package
@@ -44,5 +56,12 @@ from .methods import EnergyMethod
 from .methods import LaplacianEnergy, SobelEnergy, GradientEnergy
 
 # Define the public API of this module
-__all__ = ["SeamCarver", "VERTICAL", "HORIZONTAL", "EnergyMethod",
-           "LaplacianEnergy", "SobelEnergy", "GradientEnergy"]
+__all__ = [
+    "SeamCarver",
+    "VERTICAL",
+    "HORIZONTAL",
+    "EnergyMethod",
+    "GradientEnergy",
+    "LaplacianEnergy",
+    "SobelEnergy",
+]

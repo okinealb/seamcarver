@@ -27,6 +27,10 @@ class SeamCarver:
         shape (tuple[int, int, int]): Dimensions of the image as (rows, cols).
         verbose (bool): Flag for verbose output.
         calculator (SeamCalculator): Instance for calculating seams.
+        
+    Note: This class supports both vertical and horizontal seam carving by 
+    transposing the image as needed. Thus, all downstream methods and modules
+    assume that the image orientated for vertical seam carving (column removal).
     """
 
     # Class attributes
@@ -91,18 +95,10 @@ class SeamCarver:
             self.shape = self.image.shape
             self.verbose = verbose
             self.calculator = SeamCalculator(self.image, method)
-                
+
         # Handle errors initializing the SeamCarver
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Image file not found: {image}")
-        except ValueError:
-            raise ValueError("Invalid image format.")
-        except TypeError:
-            raise TypeError("Invalid image type.")
-        except MemoryError:
-            raise MemoryError("Not enough memory to load the image.")
-        except Exception as e:
-            raise ValueError(f"Error initializing SeamCarver: {e}")
+        except FileNotFoundError as e:
+            raise ValueError(f"Could not load image from path: {image}") from e
 
     def resize(self, height: int, width: int) -> None:
         """Resize the image to the specified height and width."""
@@ -132,10 +128,19 @@ class SeamCarver:
 
     def highlight(self, direction: int = VERTICAL) -> None:
         """Highlight the minimum seam in the image."""
-        seam = self.calculator.find_seam()
-        bool_mask = utils.mask(seam, (self.shape[0], self.shape[1]))
+        # Transpose the image if the direction is horizontal
+        is_horizontal = direction == HORIZONTAL
+        if is_horizontal:
+            self.image = np.transpose(self.image, (1, 0, 2))
+        
+        seam = self.calculator.find_seam(self.image)
+        bool_mask = utils.mask(seam, (self.image.shape[0], self.image.shape[1]))
         # Highlight the seam in red
         self.image[~bool_mask] = np.array([255, 0, 0])
+        
+        # Retranspose the image if the direction is horizontal
+        if is_horizontal:
+            self.image = np.transpose(self.image, (1, 0, 2))
 
     def save(self, output_path: str = 'output.jpg') -> None:
         """Save the carved image to the specified path."""    

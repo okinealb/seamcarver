@@ -19,6 +19,9 @@ Example:
     energy_method = SobelEnergy()
     # or
     energy_method = LaplacianEnergy()
+    
+Note: These methods assume that the image is always in a vertical orientation for seam carving.
+For horizontal seams, the image should be transposed before passing it to the methods.
 """
 
 # Expose the interface
@@ -29,4 +32,9 @@ from .gradient import GradientEnergy
 from .sobel import SobelEnergy
 
 # Define the public API of this module
-__all__ = ['EnergyMethod', 'LaplacianEnergy', 'GradientEnergy', 'SobelEnergy']
+__all__ = [
+    "EnergyMethod",
+    "GradientEnergy",
+    "LaplacianEnergy",
+    "SobelEnergy"
+]

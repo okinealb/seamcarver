@@ -17,6 +17,10 @@ class SeamCalculator:
         energy_cst (np.ndarray): Energy cost table for seam calculation.
         seam (np.ndarray): Indices of the seam in the image.
         method (EnergyMethod): Method to calculate the energy of the image.
+        
+    Note: This class assumes that the image is always in a vertical orientation
+    for seam carving. For horizontal seams, the image should be transposed
+    before passing it to the methods.
     """
 
     image: np.ndarray
@@ -39,17 +43,28 @@ class SeamCalculator:
         self.image = image
         self.method = method
         
-    def find_seam(self, image = None) -> np.ndarray:
+    def find_seam(self, image: np.ndarray | None = None) -> np.ndarray:
         """Find and return a directional seam as a list of indices."""
         
         self.image = image if image is not None else self.image
         # Perform energy computation and cost calculation
-        self.energy_tbl = self.method.compute_energy(self.image)
+        self._compute_energy()
         self._compute_cost()
         self._compute_seam()
             
         # Return the computed seam
         return self.seam
+    
+    
+    def _compute_energy(self) -> None:
+        """Compute the energy table for the image using the specified method.
+    
+        This method calculates the energy of each pixel in the image based on
+        the chosen energy method (e.g., GradientEnergy).
+        """
+        
+        # Compute the energy table using the specified method
+        self.energy_tbl = self.method.compute_energy(self.image)
     
     def _compute_cost(self) -> None:
         """Compute cumulative minimum cost table using dynamic programming.

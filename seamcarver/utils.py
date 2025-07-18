@@ -1,5 +1,9 @@
 """
 Utility functions for seam carving.
+
+Note: This class assumes that the image is always in a vertical orientation
+for seam carving. For horizontal seams, the image should be transposed
+before passing it to the methods.
 """
 
 # Import standard library packages
