@@ -23,7 +23,7 @@ import pytest
 import numpy as np
 from PIL import Image
 import os
-# Import the project specific packages
+# Import the project-specific packages
 from seamcarver.core import SeamCarver, SeamCalculator
 from seamcarver.methods import GradientEnergy
 from seamcarver.constants import VERTICAL, HORIZONTAL
@@ -44,35 +44,37 @@ def carver(sample_image):
 
 def test_load_from_array(sample_image):
     """Test loading an image from a numpy array."""
-    image = sample_image
-    carver = SeamCarver(image)
+    carver = SeamCarver(sample_image)
     assert carver.image.shape == sample_image.shape
     assert isinstance(carver.image, np.ndarray)
+    assert carver.verbose is False
     
 def test_load_from_list(sample_image):
     """Test loading an image from a nested list."""
-    image = sample_image.tolist()
-    carver = SeamCarver(image)
+    image_list = sample_image.tolist()
+    carver = SeamCarver(image_list)
     assert carver.image.shape == sample_image.shape
     assert isinstance(carver.image, np.ndarray)
+    assert carver.verbose is False
     
 def test_load_from_pil_image(sample_image):
     """Test loading an image from a PIL Image object."""
-    image = Image.fromarray(sample_image)
-    carver = SeamCarver(image)
+    image_pil = Image.fromarray(sample_image)
+    carver = SeamCarver(image_pil)
     assert carver.image.shape == sample_image.shape
     assert isinstance(carver.image, np.ndarray)
+    assert carver.verbose is False
     
 def test_load_from_path(sample_image):
     """Test loading an image from a file path."""
     # Create a temporary image file for testing
-    image = Image.fromarray(sample_image)
     image_path = "tests/test_image.png"
-    image.save(image_path)
+    Image.fromarray(sample_image).save(image_path)
     carver = SeamCarver(image_path)
     # Shape and type checks
     assert carver.image.shape == sample_image.shape
     assert isinstance(carver.image, np.ndarray)
+    assert carver.verbose is False
     # Clean up the temporary file
     os.remove(image_path)
 
@@ -107,3 +109,4 @@ def test_horizontal_seam_removal(carver):
     carver.remove(num_seams = 1 , direction = HORIZONTAL)
     assert carver.image.shape[0] == original_shape[0] - 1
     assert carver.image.shape[1] == original_shape[1]
+    

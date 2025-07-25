@@ -21,7 +21,7 @@ Dependencies:
 # Import standard library packages
 import pytest
 import numpy as np
-# Import the project specific packages
+# Import the project-specific packages
 from seamcarver.calculator import SeamCalculator
 from seamcarver.methods import GradientEnergy
 from seamcarver.constants import VERTICAL, HORIZONTAL

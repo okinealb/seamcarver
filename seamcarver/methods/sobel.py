@@ -10,7 +10,7 @@ For more information, see the [Wikipedia article](https://en.wikipedia.org/wiki/
 # Import standard library packages
 import numpy as np
 from scipy.ndimage import sobel
-# Import project specific packages
+# Import project-specific packages
 from .interface import EnergyMethod
 
 class SobelEnergy(EnergyMethod):

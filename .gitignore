@@ -38,3 +38,6 @@ pip-delete-this-directory.txt
 
 # VS Code specific files
 .vscode/
+
+# JetBrains specific files
+.idea/

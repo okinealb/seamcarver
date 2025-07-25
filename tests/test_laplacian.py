@@ -17,7 +17,7 @@ Dependencies:
 # Import standard library packages
 import pytest
 import numpy as np
-# Import the project specific packages
+# Import the project-specific packages
 from seamcarver.methods import LaplacianEnergy
 
 @pytest.fixture

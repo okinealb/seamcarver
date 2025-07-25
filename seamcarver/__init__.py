@@ -39,11 +39,16 @@ Architecture:
 # Load metadata from the package
 import importlib.metadata
 metadata = importlib.metadata.metadata("seamcarver")
+author_email = metadata["Author-email"]
+
 __version__ = metadata["Version"]
 __summary__ = metadata["Summary"]
 __license__ = metadata["License"]
-__author__ = metadata["Author-email"]
+__author__ = author_email[:author_email.index("<") - 1]
+__email__ = author_email[author_email.index("<"):]
 __description__ = metadata["Description"]
+
+del metadata, author_email
 
 # Import direction constants
 from .constants import VERTICAL, HORIZONTAL

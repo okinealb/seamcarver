@@ -21,7 +21,7 @@ Dependencies:
 import pytest
 import os
 import tempfile
-# Import the project specific packages
+# Import the project-specific packages
 from seamcarver.cli import main
 
 @pytest.fixture

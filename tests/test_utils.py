@@ -18,7 +18,7 @@ Dependencies:
 # Import standard library packages
 import pytest
 import numpy as np
-# Import the project specific packages
+# Import the project-specific packages
 from seamcarver.utils import mask
 
 @pytest.fixture
