@@ -20,7 +20,7 @@ class GradientEnergy(EnergyMethod):
     image. It inherits from the EnergyMethod interface.
     """
 
-    def compute_energy(self, image: np.ndarray) -> np.ndarray:
+    def __call__(self, image: np.ndarray) -> np.ndarray:
         """Compute the energy map of the image using image gradients."""
         # Initialize the energy table with border values
         energy_tbl = np.full(image.shape[:2], BORDER_ENERGY, dtype=np.float16)

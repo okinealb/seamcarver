@@ -20,10 +20,10 @@ class LaplacianEnergy(EnergyMethod):
     It inherits from the EnergyMethod interface.
     """
 
-    def compute_energy(self, image) -> np.ndarray:
+    def __call__(self, image) -> np.ndarray:
         """Compute the energy map of the image using the Laplacian operator."""
         # Convert the image to grayscale, then apply the Laplacian operator
-        grayscale_image = np.mean(image, axis=2).astype(np.float32)
+        grayscale_image = np.mean(image, axis=2).astype(np.float16)
         laplacian_image = laplace(grayscale_image, mode='constant', cval=255)
         energy_tbl = np.abs(laplacian_image).astype(np.float16)
         

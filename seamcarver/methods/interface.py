@@ -11,31 +11,40 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 class EnergyMethod(ABC):
-    """Base class for energy table computation methods.
+    """Base class for energy computation methods.
     
     This abstract base class defines the interface for computing energy maps
-    in seam carving algorithms. Subclasses must implement the `compute_energy`
-    method to provide specific energy calculation strategies.
+    in seam carving algorithms. Energy methods are callable objects that
+    transform images into importance maps for guiding seam placement.
     
     Examples:
         >>> class CustomEnergy(EnergyMethod):
-        ...     def compute_energy(self, image: np.ndarray) -> np.ndarray:
+        ...     def __call__(self, image: np.ndarray) -> np.ndarray:
         ...         return np.random.random(image.shape[:2])
+        ...
+        >>> method = CustomEnergy()
+        >>> energy_map = method(image)
         
-    Note: This class assumes that the image is always in a vertical orientation
-    for seam carving. For horizontal seams, the image should be transposed
-    before passing it to the methods.
+    Note: 
+        This class assumes vertical seam orientation. For horizontal 
+        seams, transpose the image before passing to the method.
     """
     
     @abstractmethod
-    def compute_energy(self, image: np.ndarray) -> np.ndarray:
-        """Compute the energy map of the image.
+    def __call__(self, image: np.ndarray) -> np.ndarray:
+        """Compute energy map indicating pixel importance.
         
         Args:
-            image (np.ndarray): Input image as a 3D numpy array (height, width, channels).
-            
+            image: Input image as 3D numpy array (height, width, channels).
+                Expected to be in RGB format with values 0-255 or 0-1.
+                
         Returns:
-            Energy map as a 2D numpy array (height, width) where higher
-            values indicate more important pixels.
+            Energy map as 2D numpy array (height, width) where higher
+            values indicate more important pixels that should be preserved.
+            
+        Examples:
+            >>> method = GradientEnergy()
+            >>> energy = method(image)
+            >>> assert energy.shape == image.shape[:2]
         """
         pass

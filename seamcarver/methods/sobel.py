@@ -20,10 +20,10 @@ class SobelEnergy(EnergyMethod):
     image. It inherits from the EnergyMethod interface.
     """
 
-    def compute_energy(self, image) -> np.ndarray:
+    def __call__(self, image) -> np.ndarray:
         """Compute the energy map of the image using the Sobel operator."""
         # Convert the image to grayscale, then apply the Sobel operator
-        grayscale_image = np.mean(image, axis=2).astype(np.float32)
+        grayscale_image = np.mean(image, axis=2).astype(np.float16)
         gradient_x = sobel(grayscale_image, axis=1, mode='constant', cval=255)
         gradient_y = sobel(grayscale_image, axis=0, mode='constant', cval=255)
         energy_tbl = np.sqrt(gradient_x**2 + gradient_y**2).astype(np.float16)
