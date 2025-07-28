@@ -1,16 +1,17 @@
 """
-The constants used throughout the seam carving package.
+Constants for the seam carving package.
 
-These constants are used internally to indicate the direction of seams. They
-are defined here for clarity and consistency across the package. Note, that 
-these directions correspond to the usage of `axis` in NumPy functions, where
-`0` is horizontal (left to right) and `1` is vertical (top to bottom).
+This module defines direction constants and default values used throughout
+the seamcarver library. Direction constants follow NumPy axis conventions
+where 0 is horizontal and 1 is vertical.
 """
 
 # Constants for seam direction to be used internally
 HORIZONTAL: int = 0
-"""int: Indicates a horizontal seam direction (left to right)."""
+"""int: Indicates horizontal seam orientation (left to right)."""
 VERTICAL: int = 1
-"""int: Indicates a vertical seam direction (top to bottom)."""
+"""int: Indicates vertical seam orientation (top to bottom)."""
 BORDER_ENERGY: int = 1000
 """int: Default energy value for border pixels in the energy map."""
+HIGHLIGHT_COLOR: list[int] = [255, 0, 0]
+"""list[int]: Default color used to highlight seams in the image (red in RGB)."""
