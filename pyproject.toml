@@ -2,28 +2,31 @@
 
 # Build system requirements
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
 
 # Project metadata
 [project]
 name = "seamcarver"
-version = "0.2.0"
+version = "0.3.0"
 description = "A command-line Python tool for image resizing using seam carving."
 authors = [{ name = "Albert Okine", email = "okinealb@grinnell.edu" }]
 license = { file = "LICENSE" }
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.8"
 dependencies = [
-    "numpy",
-    "Pillow",
-    "scipy",
+    "numpy>=1.20.0",
+    "Pillow>=8.0.0", 
+    "scipy>=1.7.0",
 ]
+keywords = ["seam-carving", "image-processing", "computer-vision", "image-resizing"]
 classifiers = [
     # Project classification
-    "Development Status :: 3 - Pre-Alpha",
+    "Development Status :: 4 - Beta",
     # Audience
     "Intended Audience :: End Users/Desktop",
     "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
     # Environment
     "Environment :: Console",
     # License
@@ -45,7 +48,9 @@ classifiers = [
 
 # URLs for the main project repository
 [project.urls]
+Homepage = "https://github.com/okinealb/seamcarver"
 Repository = "https://github.com/okinealb/seamcarver.git"
+Issues = "https://github.com/okinealb/seamcarver/issues"
 
 # Optional scripts to run the command-line interface
 [project.scripts]
@@ -54,10 +59,26 @@ seamcarver = "seamcarver.cli:main"
 # Optional dependencies for development and testing
 [project.optional-dependencies]
 test = [
-    "pytest",
-    "pytest-benchmark",
+    "pytest>=7.0.0",
+    "pytest-benchmark>=4.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-benchmark>=4.0.0", 
+    "black>=22.0.0",
+    "isort>=5.0.0",
 ]
 
-# Configuration for setuptools to exclude testing packages
+# Configuration for setuptools to find packages correctly
 [tool.setuptools.packages.find]
-exclude = ["tests*", "test*", "build*"]
+where = ["."]
+include = ["seamcarver*"]
+exclude = ["tests*", "test*", "build*", "dist*", "*.egg-info*"]
+
+# Pytest configuration 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--strict-markers --strict-config --verbose"
