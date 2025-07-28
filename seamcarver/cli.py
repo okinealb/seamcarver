@@ -11,24 +11,25 @@ import argparse as ap
 import logging
 import sys
 from typing import Sequence
-# Import project specific packages
+# Import project-specific packages
 from .core import SeamCarver
-from .constants import VERTICAL, HORIZONTAL
+from .constants import VERTICAL, HORIZONTAL, HIGHLIGHT_COLOR
 from .logger import setup_cli_logging, get_logger
 
-def main(input: Sequence[str] | None = None) -> None:
+
+def main(argv: Sequence[str] | None = None) -> None:
     # Create argument parsers for different command options
     save_parser = ap.ArgumentParser(add_help=False)
     save_parser.add_argument('-o', '--output', type=str, default='output.jpg',
         help='Path to save the output image after seam carving.')
     
     direction_parser = ap.ArgumentParser(add_help=False)
-    direction_parser.add_argument('-d', '--direction', choices=['vertical', 'horizontal'],
-        default='vertical',
-        metavar='DIR', type=str.lower,
+    direction_parser.add_argument('-d', '--direction',
+        choices=['vertical', 'horizontal'],
+        default='vertical', metavar='DIR', type=str,
         help='Direction of seams to process (vertical or horizontal).')
     direction_parser.add_argument('-c', '--count', type=int, default=1,
-        help='Number of seams to process (default: 1).')
+        help='Number of seams to process.')
     
     # Create the main argument parser
     parser = ap.ArgumentParser(
@@ -40,8 +41,9 @@ def main(input: Sequence[str] | None = None) -> None:
     # Add global arguments
     parser.add_argument('input', type=str,
         help='Path to the input image file for seam carving.')
-    parser.add_argument('--log-file', type=str, default=None,
-        help='Path to save the log file. If not specified, logs will be printed to stderr.',)
+    parser.add_argument('-l', '--log-file', type=str, default=None,
+        help='Path to save the log file.',
+        metavar='LOG')
     parser.add_argument('-v', '--verbose', action='store_true',
         help='Enable verbose output for debugging purposes.',)
     parser.add_argument('-q', '--quiet', action='store_true',
@@ -67,11 +69,15 @@ def main(input: Sequence[str] | None = None) -> None:
     # Add the highlight command
     highlight_parser = subparsers.add_parser('highlight',
         help='Highlight seams in the image.',
-        parents=[direction_parser],
+        parents=[save_parser, direction_parser],
         formatter_class=ap.ArgumentDefaultsHelpFormatter)
+    highlight_parser.add_argument('-r', '--rgb', nargs=3, type=int,
+        default=HIGHLIGHT_COLOR,
+        help='Color to highlight pixels in, as a tuple in RGB format.',
+        metavar=('R','G','B'))
     
     # Get the command line inputs
-    args = parser.parse_args(input)
+    args = parser.parse_args(argv)
     
     # Set up logging based on the command line arguments, then get the logger
     setup_cli_logging(
@@ -95,38 +101,31 @@ def main(input: Sequence[str] | None = None) -> None:
         carver.resize(height=args.height, width=args.width)
         logger.info("Image resized successfully.")
         logger.info(f"Saving output image to {args.output}...")
-        try:
-            carver.save(output_path=args.output)
-            logger.info("Output image saved successfully.")
-        except Exception as e:
-            handle_error(e, logger, verbose=args.verbose)
-            sys.exit(1)
-        
+
     elif args.command == 'remove':
-        # Set the seam direction based on the command
         direction = VERTICAL if args.direction == 'vertical' else HORIZONTAL
-        
+
         logger.info(f"Removing {args.count} seams in {args.direction} direction...")
-        carver.remove(num_seams=args.count, direction=direction)
+        carver.remove(direction=direction, num_seams=args.count)
         logger.info("Seams removed successfully.")
         logger.info(f"Saving output image to {args.output}...")
-        try:
-            carver.save(output_path=args.output)
-            logger.info("Output image saved successfully.")
-        except Exception as e:
-            handle_error(e, logger, verbose=args.verbose)
-            sys.exit(1)
         
     elif args.command == 'highlight':
-        # Set the seam direction based on the command
         direction = VERTICAL if args.direction == 'vertical' else HORIZONTAL
-        
+
         logger.info(f"Highlighting {args.count} seams in {args.direction} direction...")
-        carver.highlight(direction=direction)
+        carver.highlight(direction=direction, num_seams=args.count, color=args.rgb)
         logger.info("Seams highlighted successfully.")
         logger.debug(f"Displaying highlighted image...")
         carver.display()
         logger.debug("Image display completed.")
+        
+    try:
+        carver.save(output_path=args.output)
+        logger.info("Output image saved successfully.")
+    except Exception as e:
+        handle_error(e, logger, verbose=args.verbose)
+        sys.exit(1)
     
 def handle_error(
     error: Exception,
@@ -160,4 +159,4 @@ def handle_error(
             logger.error("Use -v/--verbose for more details.")
     
 if __name__ == "__main__":
-    main(input=None)
+    main(argv=None)
