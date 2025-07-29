@@ -65,6 +65,7 @@ class SeamCalculator:
         """
         self.method = method
 
+
     def __call__(
         self,
         image: np.ndarray,
@@ -102,7 +103,6 @@ class SeamCalculator:
             
             # Initialize the seams mask with the image shape
             seams = np.zeros(image.shape[:2], dtype=bool)
-            
             # Compute energy once
             energy = self._compute_energy(image)
             
@@ -150,15 +150,17 @@ class SeamCalculator:
         """Compute cumulative cost table using dynamic programming."""
         
         # Initialize the costs table with the energy values
-        costs = energy.copy()
+        costs = energy.astype(np.float32, copy=True)
+        height, width = energy.shape
         # Iterate through each row to compute cumulative costs
-        for i in range(1, energy.shape[0]):
+        for i in range(1, height):
             prev = costs[i-1]
-            left = np.roll(prev, 1)
-            right = np.roll(prev, -1)
-            left[0] = np.inf
-            right[-1] = np.inf
-            costs[i] += np.minimum.reduce([prev, left, right])
+            curr = costs[i]
+            
+            # Update the interiors and boundaries with minimum costs
+            curr[1:-1] += np.minimum(np.minimum(prev[:-2], prev[1:-1]), prev[2:])
+            curr[0] += min(prev[0], prev[1])
+            curr[-1] += min(prev[-1], prev[-2])
             
         return costs # return costs table
     
@@ -173,12 +175,12 @@ class SeamCalculator:
         # Set the last index of the seam to the minimum
         seams[-1, prev] = True
         energy[-1, prev] = np.inf
-
+        height, width = energy.shape[:2]
         # Backtrack to find the seam path
-        for i in range(energy.shape[0]-2, -1, -1):
+        for i in range(height-2, -1, -1):
             # Find the bounds and indices for the current seam
             left_bound = max(0, prev - 1)
-            right_bound = min(energy.shape[1], prev + 2)
+            right_bound = min(width, prev + 2)
             min_index = int(np.argmin(costs[i, left_bound:right_bound]))
             
             # Update the seam
