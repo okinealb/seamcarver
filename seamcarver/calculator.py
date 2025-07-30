@@ -44,7 +44,7 @@ class SeamCalculator:
     MAP_DIMS_TO_SIZE: list[tuple[int, int]] = [ # (width, percentage)
         (1000, 8),  # 12.5% per batch for images >= 1000 pixels
         (500, 10),  # 10.0% per batch for images >= 500 pixels
-        (100, 10),  # ~8.3% per batch for images >= 100 pixels
+        (100, 12),  # ~8.3% per batch for images >= 100 pixels
         (20, 15),   # ~6.7% per batch for images >= 0 pixels
         (0, 20),    #  5.0% per batch for images < 20 pixels
     ]
@@ -174,7 +174,6 @@ class SeamCalculator:
         
         # Set the last index of the seam to the minimum
         seams[-1, prev] = True
-        energy[-1, prev] = np.inf
         height, width = energy.shape[:2]
         # Backtrack to find the seam path
         for i in range(height-2, -1, -1):
@@ -185,9 +184,15 @@ class SeamCalculator:
             
             # Update the seam
             seams[i, left_bound + min_index] = True
-            energy[i, left_bound + min_index] = np.inf
+            
+            if costs[i, left_bound + min_index] == np.inf:
+                # If the cost is infinite, skip this seam
+                return np.zeros_like(seams, dtype=bool)
             
             # Update the previous column index for the next iteration
             prev = left_bound + min_index
-            
+        
+        # Only change the energy values after finding a valid seam
+        energy[seams] = np.inf
+
         return seams # return seams mask
