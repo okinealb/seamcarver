@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 # Project metadata
 [project]
 name = "seamcarver"
-version = "0.5.0"
+version = "0.5.1"
 description = "A command-line Python tool for image resizing using seam carving."
 authors = [{ name = "Albert Okine", email = "okinealb@grinnell.edu" }]
 license = { file = "LICENSE" }
@@ -77,8 +77,35 @@ exclude = ["tests*", "test*", "build*", "dist*", "*.egg-info*"]
 
 # Pytest configuration 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "benchmarks"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "--strict-markers --strict-config --verbose"
+addopts = [
+    "--strict-config",
+    "--verbose",
+    "--benchmark-columns=min,max,mean,stddev,median,ops",
+    "--benchmark-sort=mean",
+    "--benchmark-group-by=group",
+]
+console_output_style = "progress"
+
+# Configuration for pytest-benchmark
+[tool.pytest_benchmark]
+min_rounds = 5
+max_time = 10
+timer = "time.perf_counter"
+calibration_precision = 10
+warmup = true
+warmup_iterations = 100
+disable_gc = true
+sort = "mean"
+group_by = "name"
+
+[tool.pytest_cov]
+omit = [
+    "imports.py",
+    "*init*.py",
+    "profile_seamcarver.py",
+    "test.py",
+]
