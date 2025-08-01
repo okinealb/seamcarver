@@ -15,6 +15,14 @@ import numpy as np
 from .methods import EnergyMethod, GradientEnergy
 
 
+# Exceptions
+class SeamExhausedException(Exception):
+    """Exception raised when no more seams can be found in the image."""
+    def __init__(self, message="No more seams can be found."):
+        super().__init__(message)
+
+
+# Main class for seam carving calculations
 class SeamCalculator:
     """Calculator for seam carving operations using dynamic programming.
     
@@ -133,17 +141,15 @@ class SeamCalculator:
         num_successful = 0
         
         while num_successful < num_seams:
-            # Compute costs and seams for the current iteration
-            costs_i = self._compute_costs(energy)
-            seams_i = self._compute_seams(energy, costs_i)
-            
-            # Break if we can't find a valid seam
-            if seams_i.ndim == 0 or not seams_i.any():
+            try:
+                # Compute costs and seams for the current iteration
+                costs_i = self._compute_costs(energy)
+                seams_i = self._compute_seams(energy, costs_i)
+                # Add the seam and increment counter
+                seams = seams | seams_i
+                num_successful += 1
+            except SeamExhausedException:
                 break
-            
-            # Add the seam and increment counter
-            seams = seams | seams_i
-            num_successful += 1
             
         return num_successful, seams  # return remaining seams and mask
 
@@ -206,7 +212,7 @@ class SeamCalculator:
         
         # If the minimum cost is infinite, return an empty seam
         if costs[-1, prev] == np.inf:
-            return np.ndarray([], dtype=bool)
+            raise SeamExhausedException("No valid starting point found.")
         
         # Set the last index of the seam to the minimum
         seams[-1, prev] = True
@@ -222,7 +228,7 @@ class SeamCalculator:
             
             # If the cost is infinite, return an empty seam
             if costs[i, min_index] == np.inf:
-                return np.ndarray([], dtype=bool)
+                raise SeamExhausedException("No valid seam found.")
             
             # Update the seam
             seams[i, min_index] = True
