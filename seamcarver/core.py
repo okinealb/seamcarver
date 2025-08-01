@@ -17,6 +17,20 @@ from .constants import VERTICAL, HORIZONTAL, HIGHLIGHT_COLOR
 from .methods import EnergyMethod, GradientEnergy
 
 
+# Decorators
+def transpose_if_horizontal(func):
+    """Decorator to transpose the image if the direction is horizontal."""
+    def wrapper(self, direction, *args, **kwargs):
+        transpose = direction == HORIZONTAL
+        if transpose:
+            self.image = np.transpose(self.image, (1, 0, 2))
+        result = func(self, direction=direction, *args, **kwargs)
+        if transpose:
+            self.image = np.transpose(self.image, (1, 0, 2))
+        return result
+    return wrapper
+
+
 # Main class for seam carving operations
 class SeamCarver:
     """
@@ -38,8 +52,6 @@ class SeamCarver:
     # Class attributes
     image: np.ndarray
     """np.ndarray: image data as a numpy array."""
-    shape: tuple[int, int, int]
-    """tuple[int, int, int]: dimensions of image as (rows, cols, channels)."""
     verbose: bool
     """bool: flag for verbose output."""
     calculator: SeamCalculator
@@ -96,13 +108,18 @@ class SeamCarver:
                 )
 
             # Initialize other parameters
-            self.shape = self.image.shape
             self.verbose = verbose
             self.calculator = SeamCalculator(method)
 
         # Handle errors initializing the SeamCarver
         except FileNotFoundError as e:
             raise ValueError(f"Could not load image from path: {image}") from e
+
+
+    @property
+    def shape(self) -> tuple[int, int, int]:
+        """tuple[int, int, int]: dimensions of image as (rows, cols, channels)."""
+        return self.image.shape
 
 
     def resize(
@@ -116,7 +133,7 @@ class SeamCarver:
         self.remove(direction=VERTICAL, num_seams=self.shape[1] - width)
         self.remove(direction=HORIZONTAL, num_seams=self.shape[0] - height)
 
-
+    @transpose_if_horizontal
     def remove(
         self, 
         direction: int, 
@@ -124,50 +141,32 @@ class SeamCarver:
     ) -> None:
         """Remove the minimum seam(s) from the image."""
     
-        # Transpose the image if the direction is horizontal
-        if direction == HORIZONTAL:
-            self.image = np.transpose(self.image, (1, 0, 2))
-    
-        # Calculate the seam mask using the calculator
+        # Calculate the seam mask and remove it from the image
         mask = self.calculator(self.image, num_seams)
-        # Remove the seam from the image by exclusion
         self.image = self.image[~mask].reshape(
             self.image.shape[0], -1, 3
         )
 
-        # Re-transpose the image if the direction is horizontal
-        if direction == HORIZONTAL:
-            self.image = np.transpose(self.image, (1, 0, 2))
-    
-
+    @transpose_if_horizontal
     def highlight(self, 
         direction: int = VERTICAL, 
         num_seams: int = 1,
         color: list[int] = HIGHLIGHT_COLOR,
     ) -> None:
         """Highlight the minimum seam(s) in the image."""
-        
-        # Transpose the image if the direction is horizontal
-        if direction == HORIZONTAL:
-            self.image = np.transpose(self.image, (1, 0, 2))
-        
+
+        # Calculate the seam mask and apply the highlight color
         mask = self.calculator(self.image, num_seams)
         self.image[mask] = color
-        
-        # Re-transpose the image if the direction is horizontal
-        if direction == HORIZONTAL:
-            self.image = np.transpose(self.image, (1, 0, 2))
-            
 
     def display(self) -> None:
         """Display the current state of the image."""
         Image.fromarray(self.image).show()
         
-        
     def save(self, output_path: str = 'output.jpg') -> None:
         """Save the carved image to the specified path."""    
         Image.fromarray(self.image).save(output_path)
-        
+
 
 # Example usage of the SeamCarver class
 if __name__ == "__main__":
