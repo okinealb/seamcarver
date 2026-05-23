@@ -87,7 +87,7 @@ Supporting modules provide constants and logging (`/home/runner/work/seamcarver/
 - **Public API boundary**: package exports only key symbols (`SeamCarver`, direction constants, energy interface and built-ins), keeping internal helpers non-public (`/home/runner/work/seamcarver/seamcarver/seamcarver/__init__.py:64-72`).
 - **CLI boundary**: command vocabulary and logging behavior are isolated from algorithm internals (`/home/runner/work/seamcarver/seamcarver/seamcarver/cli.py:35-77`, `/home/runner/work/seamcarver/seamcarver/seamcarver/logger.py:8-63`).
 
-## 6. Notes on current state
+## 6. Known implementation gaps
 
 - `SeamCalculator` defines adaptive batch-size rules (`MAP_DIMS_TO_SIZE`) and computes `batch_size`, but current `__call__`/`_process` flow does not consume this value to cap loop work (`/home/runner/work/seamcarver/seamcarver/seamcarver/calculator.py:52-58`, `108-110`, `170-176`).
 - `utils.mask` exists but is not used in production flow; seam masking is handled directly in `core.py` and `calculator.py` (`/home/runner/work/seamcarver/seamcarver/seamcarver/utils.py:12-19`, `/home/runner/work/seamcarver/seamcarver/seamcarver/core.py:145-148`, `/home/runner/work/seamcarver/seamcarver/seamcarver/calculator.py:137`, `208`).

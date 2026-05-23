@@ -104,7 +104,7 @@ This document captures the major engineering decisions visible in the current im
 
 ## 9. Rejected alternatives (explicit vs implicit)
 
-- **No explicit ADR/rejected-alternatives record** was found in the repository docs; rationale is mostly inferred from code comments and structure (existing `docs/architecture.md` and `docs/design-decisions.md` were previously empty).
+- **No explicit ADR/rejected-alternatives record** was found in the repository docs; rationale is mostly inferred from code comments and structure.
 - **Implicitly rejected by architecture shape:**
   1. Separate horizontal algorithm implementation, in favor of transpose reuse (`/home/runner/work/seamcarver/seamcarver/seamcarver/core.py:21-31`, `45-50`).
   2. Single hardcoded energy model, in favor of strategy abstraction (`/home/runner/work/seamcarver/seamcarver/seamcarver/methods/interface.py:13-35`).
