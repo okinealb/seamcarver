@@ -2,6 +2,23 @@
 
 This document describes the current architecture of the `seamcarver` repository, with emphasis on decomposition, responsibilities, and data/control flow.
 
+The core architecture follows a straightforward, linear pipeline:
+User input is received via the CLI or Python API, passed to the central SeamCarver orchestrator, which coordinates energy map calculation and seam identification through dedicated components. The result—a resized image—is then returned or saved.
+```mermaid
+flowchart TD
+    CLI_API["1. CLI / Python API"]
+    SeamCarver["2. SeamCarver (Main Orchestrator)"]
+    SeamCalculator["3. SeamCalculator (Seam Computation)"]
+    EnergyMethod["3a. EnergyMethod (Energy Calculation)"]
+    Result["4. Result Image (Output)"]
+
+    CLI_API --> SeamCarver
+    SeamCarver --> SeamCalculator
+    SeamCalculator -- energy computation --> EnergyMethod
+    SeamCalculator --> Result
+    SeamCarver --> Result
+```
+
 ## 1. System decomposition
 
 The repository is organized into four primary layers:
