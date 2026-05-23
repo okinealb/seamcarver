@@ -70,4 +70,4 @@ When evaluating optimizations, track at least:
 - output quality checks (visual artifact regression on sample images)
 - numerical stability under different precisions
 
-Use the repository’s pytest + benchmark setup to keep measurements comparable (`pyproject.toml:79-90`, `94-103`).
+Use the repository’s pytest + benchmark setup to keep measurements comparable (pytest collection/options: `pyproject.toml:79-90`; benchmark defaults: `pyproject.toml:94-103`).
