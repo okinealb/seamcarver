@@ -89,5 +89,5 @@ Supporting modules provide constants and logging (`seamcarver/constants.py:10-17
 
 ## 6. Known implementation gaps and cleanup opportunities
 
-- `SeamCalculator` defines adaptive batch-size rules (`MAP_DIMS_TO_SIZE`) and computes `batch_size`, but current `__call__`/`_process` flow does not consume this value to cap loop work (`seamcarver/calculator.py:52-58`, `108-110`, `170-176`).
+- `SeamCalculator` defines adaptive batch-size rules (`MAP_DIMS_TO_SIZE`) and computes `batch_size`, but current `__call__`/`_process` flow does not consume this value to cap loop work (`seamcarver/calculator.py:52-58`, `108-110`, `170-176`). Optimization implications are detailed in `docs/optimization.md`.
 - `utils.mask` exists but is not used in production flow; seam masking is handled directly in `core.py` and `calculator.py` (`seamcarver/utils.py:12-19`, `seamcarver/core.py:145-148`, `seamcarver/calculator.py:137`, `208`).

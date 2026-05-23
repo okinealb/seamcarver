@@ -27,7 +27,7 @@ This document captures the major engineering decisions visible in the current im
   - Allows experimentation without changing seam search logic.
   - Supports research/benchmark use cases with interchangeable models.
 - Tradeoff:
-  - Energy methods must obey implicit assumptions (2D map shape and vertical-orientation runtime expectation), but these are not strongly runtime-validated (`seamcarver/methods/interface.py:29-30`, `42-43`).
+  - Energy methods must obey implicit assumptions (2D map shape and top-to-bottom seam orientation expectations), but these are not strongly runtime-validated (`seamcarver/methods/interface.py:29-30`, `42-43`).
 
 ## 3. Vertical-only seam logic + transpose abstraction
 
