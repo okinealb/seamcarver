@@ -4,15 +4,25 @@ A Python package and command-line interface for content-aware image resizing wit
 
 `seamcarver` removes low-information pixel paths (seams) instead of uniformly scaling or naively cropping, helping preserve visually important content. The implementation combines dynamic-programming seam search, pluggable energy functions, and a modular API/CLI architecture for experimentation and practical use.
 
+## Additional Documentation
+
+Detailed engineering documentation is available in the [`docs/`](docs/) directory:
+
+- [Architecture Overview](docs/architecture.md)
+- [Design Decisions](docs/design-decisions.md)
+- [Optimization Notes](docs/optimization-notes.md)
+- [Benchmark Methodology](docs/benchmarking.md)
+- [Algorithm Walkthrough](docs/algorithm-overview.md)
+
 ## Visual Examples
 
 | Original | Resized (content-aware) |
 | --- | --- |
-| ![Original sample image](examples/sample.jpg) | ![Resized sample image](examples/sample_resized.jpg) |
+| ![Original sample image](examples/medium.jpg) | ![Resized sample image](examples/medium_resized.jpg) |
 
 | Seam Overlay |
 | --- |
-| ![Highlighted seams](examples/sample_seams.jpg) |
+| ![Highlighted seams](examples/medium_seams.jpg) |
 
 ## Overview
 
@@ -134,11 +144,16 @@ pytest benchmarks
 
 ### Results (template)
 
-| Resolution | Seams Removed | Runtime |
-| --- | --- | --- |
-| _TBD_ | _TBD_ | _TBD_ |
+#### Seam Removal Benchmark Results
 
-Record your environment alongside results (CPU, RAM, OS, Python version) to make comparisons meaningful.
+| Image Size   | 10 seams | 20 seams | 40 seams | 80 seams | 160 seams |
+|--------------|----------|----------|----------|----------|-----------|
+| 256x256      | 0.024s   | 0.036s   | 0.069s   | 0.128s   | 0.247s    |
+| 512x512      | 0.062s   | 0.089s   | 0.148s   | 0.279s   | 0.532s    |
+| 1024x1024    | 0.192s   | 0.244s   | 0.370s   | 0.623s   | 1.193s    |
+
+> Times reflect random RGB images, running on Macbook Air M2.  
+> Seam removal scales linearly with seam count for a fixed image size.
 
 ## Repository Structure
 
