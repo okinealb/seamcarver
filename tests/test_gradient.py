@@ -16,26 +16,16 @@ Dependencies:
 """
 
 # Import standard library packages
-import pytest
 import numpy as np
 # Import the project-specific packages
 from seamcarver.methods import GradientEnergy
 from seamcarver.constants import BORDER_ENERGY
 
-@pytest.fixture
-def sample_image():
-    """Fixture to create a sample image for testing."""
-    # Create a simple 5x5 RGB image with random colors
-    return np.array([
-        [[255, 0, 0], [0, 255, 0], [0, 0, 255]],
-        [[128, 128, 0], [128, 0, 128], [0, 128, 128]],
-        [[64, 64, 64], [192, 192, 192], [32, 32, 32]]
-    ], dtype=np.uint8)
 
 def test_energy_map(sample_image):
     """Test the energy map computation."""
     method = GradientEnergy()
-    energy_tbl = method.compute_energy(sample_image)
+    energy_tbl = method(sample_image)
     # Type and shape checks
     assert energy_tbl.shape == sample_image.shape[:2]
     assert np.issubdtype(energy_tbl.dtype, np.floating)

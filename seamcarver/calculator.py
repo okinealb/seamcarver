@@ -49,12 +49,12 @@ class SeamCalculator:
     """
 
     # Class constants
-    MAP_DIMS_TO_SIZE: list[tuple[int, int]] = [ # (width, percentage)
-        (1000, 8),  # 12.5% per batch for images >= 1000 pixels
-        (500, 10),  # 10.0% per batch for images >= 500 pixels
-        (100, 12),  # ~8.3% per batch for images >= 100 pixels
-        (20, 15),   # ~6.7% per batch for images >= 0 pixels
-        (0, 20),    #  5.0% per batch for images < 20 pixels
+    MAP_DIMS_TO_SIZE: list[tuple[int, float]] = [ # (width, percentage)
+        (1000, 12.5),  # 12.5% per batch for images >= 1000 pixels
+        (500,  10.0),  # 10.0% per batch for images >= 500 pixels
+        (100,  8.33),  # ~8.3% per batch for images >= 100 pixels
+        (20,   6.67),  # ~6.7% per batch for images >= 0 pixels
+        (0,    5.00),  #  5.0% per batch for images < 20 pixels
     ]
     """list[tuple[int, int]]: Rules for batch size based on image dimensions.
         Each tuple contains (minimum dimension, batch size)."""
@@ -103,56 +103,26 @@ class SeamCalculator:
         
         H, W = image.shape[:2]
         
+        # The kept pixels, traced through batches and reshaping
         kept = np.arange(H * W)
         
         # Determine the batch size based on the image width
         batch_size = self._get_batch_size(W)
 
-        # Process the image in batches to find seams
+        # Process the seams in batches
         while num_seams > 0:
-         
-            num_successful, seams = self._process(image, num_seams)
-
-            num_seams = num_seams - num_successful
-        
-            H_i, W_i = image.shape[:2]
-        
-            image = image[~seams].reshape(H_i, W_i - num_successful, 3)
+            # TODO: SET BATCH_SIZE TO NUM_SEAMS FOR EFFICIENCY???
+            n, seams = self._process(image, num_seams, batch_size)
+            num_seams = num_seams - n
+            image = image[~seams].reshape(H, -1, 3)
+            # Update the kept indices based on the seams found
             kept = kept[~seams.flatten()]
         
+        # Construct the boolean mask of the seams
         mask = np.zeros(H * W, dtype=bool)
         mask[kept] = True
         
-        return ~mask.reshape(H, W) # return the boolean mask of seams
-
-
-    def _process(
-        self,
-        image: np.ndarray,
-        num_seams: int,
-    ) -> tuple[int, np.ndarray]:
-        """Process as many seams as possible via batching."""
-        
-        # Initialize the seams mask with the image shape
-        seams = np.zeros(image.shape[:2], dtype=bool)
-        # Compute energy once
-        energy = self._compute_energy(image)
-        
-        num_successful = 0
-        
-        while num_successful < num_seams:
-            try:
-                # Compute costs and seams for the current iteration
-                costs_i = self._compute_costs(energy)
-                seams_i = self._compute_seams(energy, costs_i)
-                # Add the seam and increment counter
-                seams = seams | seams_i
-                num_successful += 1
-            except SeamExhausedException:
-                break
-            
-        return num_successful, seams  # return remaining seams and mask
-
+        return (~mask).reshape(H, W) # return the boolean mask of seams
 
     def mask_to_index(self, mask: np.ndarray) -> np.ndarray:
         """Convert boolean seam mask to flat array of linear indices.
@@ -170,36 +140,58 @@ class SeamCalculator:
     def _get_batch_size(self, width: int) -> int:
         """Calculate optimal batch size based on image width."""
         # Use the predefined mapping to get the batch size
-        for min_width, divisor in self.MAP_DIMS_TO_SIZE:
+        for min_width, percent in self.MAP_DIMS_TO_SIZE:
             if width >= min_width:
-                return max(1, width // divisor)
+                return int(max(1, width * percent // 100))
         return 1
     
-
+    def _process(
+        self,
+        image: np.ndarray,
+        num_seams: int,
+        batch_size: int,
+    ) -> tuple[int, np.ndarray]:
+        """Process as many seams as possible in the current batch."""
+        
+        # Initialize the seams mask with the image shape
+        seams = np.zeros(image.shape[:2], dtype=bool)
+        energy = self._compute_energy(image)
+        n = 0
+        
+        while n < min(batch_size, num_seams):
+            # Try to compute valid seams in the current batch
+            try:
+                costs_i = self._compute_costs(energy)
+                seams_i = self._compute_seams(energy, costs_i)
+                seams = seams | seams_i
+                # Update the number of seams found
+                n += 1
+            except SeamExhausedException:
+                break
+            
+        return n, seams  # return the number of seams found and their mask
+    
     def _compute_energy(self, image: np.ndarray) -> np.ndarray:
         """Compute energy map using configured energy method."""
         # Compute the energy table using the specified method
         return self.method(image)
-    
     
     def _compute_costs(self, energy: np.ndarray) -> np.ndarray:
         """Compute cumulative cost table using dynamic programming."""
         
         # Initialize the costs table with the energy values
         costs = energy.astype(np.float32, copy=True)
-        height, width = energy.shape
+        height = energy.shape[0]
         # Iterate through each row to compute cumulative costs
         for i in range(1, height):
             prev = costs[i-1]
             curr = costs[i]
-            
             # Update the interiors and boundaries with minimum costs
             curr[1:-1] += np.minimum(np.minimum(prev[:-2], prev[1:-1]), prev[2:])
             curr[0] += min(prev[0], prev[1])
             curr[-1] += min(prev[-1], prev[-2])
             
         return costs # return costs table
-    
     
     def _compute_seams(self, energy: np.ndarray, costs: np.ndarray) -> np.ndarray:
         """Backtrack through cost table to find minimum energy seam."""

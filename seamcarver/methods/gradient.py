@@ -13,6 +13,7 @@ import numpy as np
 from .interface import EnergyMethod
 from ..constants import BORDER_ENERGY
 
+
 class GradientEnergy(EnergyMethod):
     """Gradient magnitude energy method for seam carving.
     
@@ -23,10 +24,10 @@ class GradientEnergy(EnergyMethod):
     def __call__(self, image: np.ndarray) -> np.ndarray:
         """Compute the energy map of the image using image gradients."""
         # Initialize the energy table with border values
-        energy_tbl = np.full(image.shape[:2], BORDER_ENERGY, dtype=np.float16)
+        energy_tbl = np.full(image.shape[:2], BORDER_ENERGY, dtype=np.float32)
         # Calculate gradients, then combine them for total energy
         dx = (image[1:-1, 2:] - image[1:-1, :-2])
         dy = (image[2:, 1:-1] - image[:-2, 1:-1])
-        energy_tbl[1:-1, 1:-1] = np.sqrt(np.sum(dx**2, axis=2) + np.sum(dy**2, axis=2))
+        energy_tbl[1:-1, 1:-1] = np.sqrt(np.sum(dx**2, axis=-1) + np.sum(dy**2, axis=-1))
         
         return energy_tbl # Return the computed energy table

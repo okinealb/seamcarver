@@ -13,6 +13,7 @@ from scipy.ndimage import sobel
 # Import project-specific packages
 from .interface import EnergyMethod
 
+
 class SobelEnergy(EnergyMethod):
     """Sobel energy method for seam carving.
     
@@ -23,9 +24,9 @@ class SobelEnergy(EnergyMethod):
     def __call__(self, image) -> np.ndarray:
         """Compute the energy map of the image using the Sobel operator."""
         # Convert the image to grayscale, then apply the Sobel operator
-        grayscale_image = np.mean(image, axis=2).astype(np.float16)
+        grayscale_image = np.mean(image, axis=2).astype(np.float32)
         gradient_x = sobel(grayscale_image, axis=1, mode='constant', cval=255)
         gradient_y = sobel(grayscale_image, axis=0, mode='constant', cval=255)
-        energy_tbl = np.sqrt(gradient_x**2 + gradient_y**2).astype(np.float16)
+        energy_tbl = np.sqrt(gradient_x**2 + gradient_y**2)
         
         return energy_tbl # Return the computed energy table
