@@ -56,7 +56,7 @@ pip install seamcarver
 ## Quick Start
 
 ```bash
-seamcarver examples/sample.jpg resize 240 400 --output resized.jpg
+seamcarver examples/medium.jpg resize 240 400 --output resized.jpg
 ```
 
 ## CLI Usage
@@ -73,7 +73,7 @@ seamcarver <input> <command> [options]
 
 ### Common options
 
-- `-o, --output <path>` output path (default: `output.jpg`)
+- `-o, --output <path>` optional output path; omit it to process without saving
 - `-v, --verbose` debug-level logs
 - `-q, --quiet` warnings/errors only
 - `-l, --log-file <path>` write logs to file
@@ -83,7 +83,7 @@ seamcarver <input> <command> [options]
 ```python
 from seamcarver import SeamCarver, SobelEnergy
 
-carver = SeamCarver("examples/sample.jpg", method=SobelEnergy())
+carver = SeamCarver("examples/medium.jpg", method=SobelEnergy())
 carver.resize(height=240, width=400)
 carver.save("resized.jpg")
 ```
