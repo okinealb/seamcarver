@@ -1,0 +1,24 @@
+# Include essentials
+include README.md
+include LICENSE
+include requirements.txt
+
+# Include examples
+recursive-include examples *.jpg *.png *.jpeg
+
+# Exclude everything else not needed
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude *~
+global-exclude *.log
+global-exclude .DS_Store
+recursive-exclude tests *
+recursive-exclude __pycache__ *
+recursive-exclude *.egg-info *
+recursive-exclude build *
+recursive-exclude dist *
+exclude test.py
+exclude imports.py
+exclude profile.py
+exclude output*.jpg
