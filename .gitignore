@@ -41,3 +41,7 @@ pip-delete-this-directory.txt
 
 # JetBrains specific files
 .idea/
+
+# Coverage reports
+.coverage
+.coverage.*
