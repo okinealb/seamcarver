@@ -20,11 +20,11 @@ from .methods import EnergyMethod, GradientEnergy
 # Decorators
 def transpose_if_horizontal(func):
     """Decorator to transpose the image if the direction is horizontal."""
-    def wrapper(self, direction, *args, **kwargs):
+    def wrapper(self: "SeamCarver", direction: int, *args, **kwargs) -> None:
         transpose = direction == HORIZONTAL
         if transpose:
             self.image = np.transpose(self.image, (1, 0, 2))
-        result = func(self, direction=direction, *args, **kwargs)
+        result = func(self, direction=VERTICAL, *args, **kwargs)
         if transpose:
             self.image = np.transpose(self.image, (1, 0, 2))
         return result
@@ -143,12 +143,30 @@ class SeamCarver:
     
         # Calculate the seam mask and remove it from the image
         mask = self.calculator(self.image, num_seams)
-        self.image = self.image[~mask].reshape(
-            self.image.shape[0], -1, 3
-        )
+        self.image = self.image[~mask].reshape(self.shape[0], -1, 3)
 
     @transpose_if_horizontal
-    def highlight(self, 
+    def add(
+        self, 
+        direction: int,
+        num_seams: int,
+    ) -> None:
+        """Duplicate and add the minimum seam(s) from the image."""
+        
+        # Calculate the seam mask and duplicate the seams
+        mask = self.calculator(self.image, num_seams)
+        
+        #seams = self.image[mask].repeat(2) # this should double the occurence of each
+        # thus for the seams [1, 2, 3] -> [1, 1, 2, 2, 3, 3]
+        
+        # Create the new image
+        image = np.zeros((self.shape[0], self.shape[1] + num_seams, 3), dtype=np.uint16)
+        # index into the image with the boolean mask and the 
+        image[mask]
+
+    @transpose_if_horizontal
+    def highlight(
+        self, 
         direction: int = VERTICAL, 
         num_seams: int = 1,
         color: list[int] = HIGHLIGHT_COLOR,

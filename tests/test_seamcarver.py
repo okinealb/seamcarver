@@ -25,22 +25,8 @@ from PIL import Image
 import os
 # Import the project-specific packages
 from seamcarver.core import SeamCarver, SeamCalculator
-from seamcarver.methods import GradientEnergy
 from seamcarver.constants import VERTICAL, HORIZONTAL
 
-@pytest.fixture
-def sample_image():
-    """Fixture to create a sample image for testing."""
-    return np.array([
-        [[255, 0, 0], [0, 255, 0], [0, 0, 255]],
-        [[128, 128, 0], [128, 0, 128], [0, 128, 128]],
-        [[64, 64, 64], [192, 192, 192], [32, 32, 32]]
-    ], dtype=np.uint8)
-    
-@pytest.fixture
-def carver(sample_image):
-    """Fixture to create a SeamCarver instance with a sample image."""
-    return SeamCarver(sample_image, method=GradientEnergy())
 
 def test_load_from_array(sample_image):
     """Test loading an image from a numpy array."""
@@ -91,10 +77,11 @@ def test_resize_image(carver, sample_image):
     carver.resize(*shape[:2])
     assert carver.image.shape == shape
     
-# def test_highlight_image(carver):
-#     """Test the image highlighting functionality."""
-#     carver.highlight(VERTICAL)
-#     raise(NotImplementedError("Highlighting not implemented yet."))
+def test_highlight_image(carver):
+    """Test the image highlighting functionality."""
+    pytest.skip("Skipping seam removal tests as they are not implemented yet.")
+    carver.highlight(VERTICAL)
+    raise(NotImplementedError("Highlighting not implemented yet."))
     
 def test_vertical_seam_removal(carver):
     """Test vertical seam removal."""
@@ -109,4 +96,3 @@ def test_horizontal_seam_removal(carver):
     carver.remove(num_seams = 1 , direction = HORIZONTAL)
     assert carver.image.shape[0] == original_shape[0] - 1
     assert carver.image.shape[1] == original_shape[1]
-    
