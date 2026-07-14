@@ -1,4 +1,7 @@
 """
+SeamCarver
+==========
+
 Tools for content-aware image resizing using the seam carving algorithm. It
 exposes the `SeamCarver` class as the main interface, allowing users to
 resize images while preserving important visual content.
@@ -12,7 +15,7 @@ package includes built-in energy methods such as `SobelEnergy` and
 `EnergyMethod`.
 
 Basic Usage:
----------------
+------------
     >>> from seamcarver import SeamCarver, SobelEnergy
     >>> carver = SeamCarver("path/to/image.jpg", energy_method=SobelEnergy())
     >>> resized_image = carver.resize(width=200, height=150)
@@ -56,6 +59,9 @@ from .constants import VERTICAL, HORIZONTAL
 # Expose the main class
 from .core import SeamCarver
 
+# Expose the seam calculator
+from .calculator import SeamCalculator
+
 # Import the energy interface and implemented methods
 from .methods import EnergyMethod
 from .methods import LaplacianEnergy, SobelEnergy, GradientEnergy
@@ -63,6 +69,7 @@ from .methods import LaplacianEnergy, SobelEnergy, GradientEnergy
 # Define the public API of this module
 __all__ = [
     "SeamCarver",
+    "SeamCalculator",
     "VERTICAL",
     "HORIZONTAL",
     "EnergyMethod",
