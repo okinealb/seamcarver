@@ -16,11 +16,12 @@ from .core import SeamCarver
 from .constants import VERTICAL, HORIZONTAL, HIGHLIGHT_COLOR
 from .logger import setup_cli_logging, get_logger
 
+from .methods import SobelEnergy, LaplacianEnergy
 
 def main(argv: Sequence[str] | None = None) -> None:
     # Create argument parsers for different command options
     save_parser = ap.ArgumentParser(add_help=False)
-    save_parser.add_argument('-o', '--output', type=str, default='output.jpg',
+    save_parser.add_argument('-o', '--output', type=str, default=None,
         help='Path to save the output image after seam carving.')
     
     direction_parser = ap.ArgumentParser(add_help=False)
@@ -90,7 +91,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Initialize the SeamCarver with the provided image
     try:
         logger.info(f"Loading image from {args.input}...")
-        carver = SeamCarver(args.input, verbose=args.verbose)
+        carver = SeamCarver(args.input, verbose=args.verbose, method=SobelEnergy())
         logger.debug(f"Image loaded with shape {carver.shape}.")
     except Exception as e:
         handle_error(e, logger, verbose=args.verbose)
@@ -100,7 +101,6 @@ def main(argv: Sequence[str] | None = None) -> None:
         logger.info(f"Resizing image to {args.height}x{args.width}...")
         carver.resize(height=args.height, width=args.width)
         logger.info("Image resized successfully.")
-        logger.info(f"Saving output image to {args.output}...")
 
     elif args.command == 'remove':
         direction = VERTICAL if args.direction == 'vertical' else HORIZONTAL
@@ -108,7 +108,6 @@ def main(argv: Sequence[str] | None = None) -> None:
         logger.info(f"Removing {args.count} seams in {args.direction} direction...")
         carver.remove(direction=direction, num_seams=args.count)
         logger.info("Seams removed successfully.")
-        logger.info(f"Saving output image to {args.output}...")
         
     elif args.command == 'highlight':
         direction = VERTICAL if args.direction == 'vertical' else HORIZONTAL
@@ -120,12 +119,14 @@ def main(argv: Sequence[str] | None = None) -> None:
         carver.display()
         logger.debug("Image display completed.")
         
-    try:
-        carver.save(output_path=args.output)
-        logger.info("Output image saved successfully.")
-    except Exception as e:
-        handle_error(e, logger, verbose=args.verbose)
-        sys.exit(1)
+    if args.output is not None:
+        try:
+            logger.info(f"Saving output image to {args.output}...")
+            carver.save(output_path=args.output)
+            logger.info("Output image saved successfully.")
+        except Exception as e:
+            handle_error(e, logger, verbose=args.verbose)
+            sys.exit(1)
     
 def handle_error(
     error: Exception,

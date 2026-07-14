@@ -5,10 +5,29 @@ Logging configuration for the seam carving project.
 import logging
 import sys
 
+class ColoredFormatter(logging.Formatter):
+    """Add colors to CLI logging for better readability."""
+    
+    COLORS = {
+        'DEBUG': '\033[94m',    # Blue
+        'INFO': '\033[92m',     # Green  
+        'WARNING': '\033[93m',  # Yellow
+        'ERROR': '\033[91m',    # Red
+        'CRITICAL': '\033[95m', # Magenta
+    }
+    RESET = '\033[0m'
+    
+    def format(self, record):
+        if sys.stderr.isatty():  # Only colorize if terminal supports it
+            color = self.COLORS.get(record.levelname, '')
+            record.levelname = f"{color}{record.levelname}{self.RESET}"
+        return super().format(record)
+
 def setup_cli_logging(
     verbose: bool = False,
     quiet: bool = False,
     log_file: str | None = None,
+    color: bool = True
 ) -> None:
     """Configure logging for CLI usage.
     
@@ -41,7 +60,10 @@ def setup_cli_logging(
         console_format = '%(message)s'
     
     # Apply formatter
-    formatter = logging.Formatter(console_format)
+    if color and sys.stderr.isatty():
+        formatter = ColoredFormatter(console_format)
+    else:
+        formatter = logging.Formatter(console_format)
     
     console_handler.setFormatter(formatter)
     console_handler.setLevel(console_level)
@@ -60,6 +82,17 @@ def setup_cli_logging(
     
     # Set root level
     root_logger.setLevel(logging.DEBUG)
+
+def setup_library_logging(name: str) -> logging.Logger:
+    """Configure logging for library usage."""
+    logger = logging.getLogger(name)
+    
+    # Libraries should NOT configure the root logger
+    # Add NullHandler to prevent "No handlers" warnings
+    if not logger.handlers:
+        logger.addHandler(logging.NullHandler())
+    
+    return logger
 
 def get_logger(name: str) -> logging.Logger:
     """Get a logger instance."""
