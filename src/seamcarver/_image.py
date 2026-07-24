@@ -1,15 +1,19 @@
 """Internal image loading and normalization."""
 
 import os
-from typing import TypeAlias
+from typing import Any, TypeAlias
 
 import numpy as np
+import numpy.typing as npt
 from PIL import Image
 
-ImageInput: TypeAlias = np.ndarray | list | Image.Image | str | os.PathLike[str]
+ImageArray: TypeAlias = npt.NDArray[np.uint8]
+ImageInput: TypeAlias = (
+    npt.NDArray[np.generic] | list[Any] | Image.Image | str | os.PathLike[str]
+)
 
 
-def normalize_image(image: ImageInput) -> np.ndarray:
+def normalize_image(image: ImageInput) -> ImageArray:
     """Return an owned RGB uint8 array for a supported image input."""
     if isinstance(image, np.ndarray):
         return _from_ndarray(image)
@@ -24,7 +28,7 @@ def normalize_image(image: ImageInput) -> np.ndarray:
     )
 
 
-def _from_ndarray(image: np.ndarray) -> np.ndarray:
+def _from_ndarray(image: npt.NDArray[np.generic]) -> ImageArray:
     """Validate and copy an RGB uint8 array."""
     _validate_rgb_shape(image, "NumPy")
     if image.dtype != np.uint8:
@@ -32,7 +36,7 @@ def _from_ndarray(image: np.ndarray) -> np.ndarray:
     return np.array(image, dtype=np.uint8, copy=True, order="C")
 
 
-def _from_nested_list(image: list) -> np.ndarray:
+def _from_nested_list(image: list[Any]) -> ImageArray:
     """Validate integer RGB data from a nested list."""
     try:
         array = np.asarray(image)
@@ -47,12 +51,12 @@ def _from_nested_list(image: list) -> np.ndarray:
     return array.astype(np.uint8, copy=True)
 
 
-def _from_pillow_image(image: Image.Image) -> np.ndarray:
+def _from_pillow_image(image: Image.Image) -> ImageArray:
     """Convert a Pillow image to an owned RGB uint8 array."""
     return np.array(image.convert("RGB"), dtype=np.uint8, copy=True)
 
 
-def _from_path(path: str | os.PathLike[str]) -> np.ndarray:
+def _from_path(path: str | os.PathLike[str]) -> ImageArray:
     """Load a filesystem path as an owned RGB uint8 array."""
     try:
         with Image.open(path) as image:
@@ -63,7 +67,7 @@ def _from_path(path: str | os.PathLike[str]) -> np.ndarray:
         raise ValueError(f"Could not decode image from path: {path}") from error
 
 
-def _validate_rgb_shape(image: np.ndarray, source: str) -> None:
+def _validate_rgb_shape(image: npt.NDArray[np.generic], source: str) -> None:
     """Validate the dimensions required by the seam-carving implementation."""
     if image.ndim != 3:
         raise ValueError(

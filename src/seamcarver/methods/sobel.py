@@ -8,7 +8,10 @@ For more information, see the [Wikipedia article](https://en.wikipedia.org/wiki/
 """
 
 # Import standard library packages
+from typing import cast
+
 import numpy as np
+import numpy.typing as npt
 from scipy.ndimage import sobel
 
 # Import project-specific packages
@@ -22,7 +25,7 @@ class SobelEnergy(EnergyMethod):
     image. It inherits from the EnergyMethod interface.
     """
 
-    def __call__(self, image) -> np.ndarray:
+    def __call__(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.float32]:
         """Compute the energy map of the image using the Sobel operator."""
         # Convert the image to grayscale, then apply the Sobel operator
         grayscale_image = np.mean(image, axis=2).astype(np.float32)
@@ -30,4 +33,4 @@ class SobelEnergy(EnergyMethod):
         gradient_y = sobel(grayscale_image, axis=0, mode="constant", cval=255)
         energy_tbl = np.sqrt(gradient_x**2 + gradient_y**2)
 
-        return energy_tbl  # Return the computed energy table
+        return cast(npt.NDArray[np.float32], energy_tbl)

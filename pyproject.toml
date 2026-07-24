@@ -63,6 +63,7 @@ dev = [
     "pytest>=7.0.0",
     "pytest-benchmark>=4.0.0", 
     "black>=22.0.0",
+    "mypy>=2.3.0",
     "ruff>=0.9.0",
 ]
 
@@ -71,6 +72,9 @@ dev = [
 where = ["src"]
 include = ["seamcarver*"]
 exclude = ["tests*", "test*", "build*", "dist*", "*.egg-info*"]
+
+[tool.setuptools.package-data]
+seamcarver = ["py.typed"]
 
 # Pytest configuration 
 [tool.pytest.ini_options]
@@ -98,3 +102,13 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src/seamcarver"]
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = ["scipy.ndimage"]
+ignore_missing_imports = true

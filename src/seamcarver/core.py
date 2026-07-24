@@ -11,6 +11,7 @@ For more information on seam carving, refer to the
 from typing import SupportsIndex
 
 import numpy as np
+import numpy.typing as npt
 
 # Import general packages
 from PIL import Image
@@ -23,7 +24,9 @@ from .constants import HIGHLIGHT_COLOR, HORIZONTAL, VERTICAL
 from .methods import EnergyMethod, GradientEnergy
 
 
-def _orient_image(image: np.ndarray, direction: int) -> np.ndarray:
+def _orient_image(
+    image: npt.NDArray[np.uint8], direction: int
+) -> npt.NDArray[np.uint8]:
     """Return an image oriented for vertical seam processing."""
     if direction == HORIZONTAL:
         return np.transpose(image, (1, 0, 2))
@@ -49,7 +52,7 @@ class SeamCarver:
     """
 
     # Class attributes
-    image: np.ndarray
+    image: npt.NDArray[np.uint8]
     """np.ndarray: image data as a numpy array."""
     verbose: bool
     """bool: flag for verbose output."""
@@ -61,7 +64,7 @@ class SeamCarver:
         image: ImageInput,
         method: EnergyMethod = GradientEnergy(),
         verbose: bool = False,
-    ):
+    ) -> None:
         """Initialize the SeamCarver with an image and configuration.
 
         Args:
@@ -95,7 +98,7 @@ class SeamCarver:
     @property
     def shape(self) -> tuple[int, int, int]:
         """tuple[int, int, int]: dimensions of image as (rows, cols, channels)."""
-        return self.image.shape
+        return self.image.shape[0], self.image.shape[1], self.image.shape[2]
 
     def resize(
         self,
@@ -145,7 +148,7 @@ class SeamCarver:
         direction: SupportsIndex = VERTICAL,
         num_seams: SupportsIndex = 1,
         color: list[int] = HIGHLIGHT_COLOR,
-    ) -> np.ndarray:
+    ) -> npt.NDArray[np.uint8]:
         """Return an independent image with the requested seams highlighted."""
         direction = validate_direction(direction)
         oriented_image = _orient_image(self.image, direction)

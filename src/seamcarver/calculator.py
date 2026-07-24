@@ -12,6 +12,7 @@ For more information on seam carving, refer to the
 from typing import SupportsIndex
 
 import numpy as np
+import numpy.typing as npt
 
 # import project specific packages
 from ._validation import validate_num_seams
@@ -22,7 +23,7 @@ from .methods import EnergyMethod, GradientEnergy
 class SeamExhausedException(Exception):
     """Exception raised when no more seams can be found in the image."""
 
-    def __init__(self, message="No more seams can be found."):
+    def __init__(self, message: str = "No more seams can be found.") -> None:
         super().__init__(message)
 
 
@@ -67,7 +68,7 @@ class SeamCalculator:
     method: EnergyMethod
     """EnergyMethod: method to calculate the energy of the image."""
 
-    def __init__(self, method: EnergyMethod = GradientEnergy()):
+    def __init__(self, method: EnergyMethod = GradientEnergy()) -> None:
         """Initialize the SeamCalculator with an energy computation method.
 
         Args:
@@ -78,9 +79,9 @@ class SeamCalculator:
 
     def __call__(
         self,
-        image: np.ndarray,
+        image: npt.NDArray[np.uint8],
         num_seams: SupportsIndex,
-    ) -> np.ndarray:
+    ) -> npt.NDArray[np.bool_]:
         """Find optimal seams in image and return as boolean mask.
 
         Seams are removed from an internal image copy, and retained pixel indices
@@ -107,7 +108,7 @@ class SeamCalculator:
         image = image.copy()
 
         # The kept pixels, traced through batches and reshaping
-        kept = np.arange(H * W)
+        kept: npt.NDArray[np.signedinteger] = np.arange(H * W)
 
         # Determine the batch size based on the image width
         batch_size = self._get_batch_size(W)
@@ -129,7 +130,9 @@ class SeamCalculator:
 
         return (~mask).reshape(H, W)  # return the boolean mask of seams
 
-    def mask_to_index(self, mask: np.ndarray) -> np.ndarray:
+    def mask_to_index(
+        self, mask: npt.NDArray[np.bool_]
+    ) -> npt.NDArray[np.signedinteger]:
         """Convert boolean seam mask to flat array of linear indices.
 
         Args:
@@ -150,10 +153,10 @@ class SeamCalculator:
 
     def _process(
         self,
-        image: np.ndarray,
+        image: npt.NDArray[np.uint8],
         num_seams: int,
         batch_size: int,
-    ) -> tuple[int, np.ndarray]:
+    ) -> tuple[int, npt.NDArray[np.bool_]]:
         """Process as many seams as possible in the current batch."""
 
         # Initialize the seams mask with the image shape
@@ -174,7 +177,7 @@ class SeamCalculator:
 
         return n, seams  # return the number of seams found and their mask
 
-    def _compute_energy(self, image: np.ndarray) -> np.ndarray:
+    def _compute_energy(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.float32]:
         """Compute energy map using configured energy method."""
         energy = self.method(image)
         if not isinstance(energy, np.ndarray):
@@ -190,12 +193,14 @@ class SeamCalculator:
             raise TypeError("Energy map must contain real numeric values.")
 
         with np.errstate(over="ignore", invalid="ignore"):
-            energy = np.array(energy, dtype=np.float32, copy=True)
-        if not np.isfinite(energy).all():
+            normalized_energy = np.array(energy, dtype=np.float32, copy=True)
+        if not np.isfinite(normalized_energy).all():
             raise ValueError("Energy map must contain only finite float32 values.")
-        return energy
+        return normalized_energy
 
-    def _compute_costs(self, energy: np.ndarray) -> np.ndarray:
+    def _compute_costs(
+        self, energy: npt.NDArray[np.float32]
+    ) -> npt.NDArray[np.float64]:
         """Compute cumulative cost table using dynamic programming."""
 
         # Initialize the costs table with the energy values
@@ -212,7 +217,11 @@ class SeamCalculator:
 
         return costs  # return costs table
 
-    def _compute_seams(self, energy: np.ndarray, costs: np.ndarray) -> np.ndarray:
+    def _compute_seams(
+        self,
+        energy: npt.NDArray[np.float32],
+        costs: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.bool_]:
         """Backtrack through cost table to find minimum energy seam."""
 
         # Initialize the seams mask with the same shape as energy

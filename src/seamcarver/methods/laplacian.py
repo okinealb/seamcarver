@@ -8,7 +8,10 @@ For more information, see the [Wikipedia article](https://en.wikipedia.org/wiki/
 """
 
 # Import standard library packages
+from typing import cast
+
 import numpy as np
+import numpy.typing as npt
 from scipy.ndimage import laplace
 
 # Import project-specific packages
@@ -22,11 +25,11 @@ class LaplacianEnergy(EnergyMethod):
     It inherits from the EnergyMethod interface.
     """
 
-    def __call__(self, image) -> np.ndarray:
+    def __call__(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.float32]:
         """Compute the energy map of the image using the Laplacian operator."""
         # Convert the image to grayscale, then apply the Laplacian operator
         grayscale_image = np.mean(image, axis=2).astype(np.float32)
         laplacian_image = laplace(grayscale_image, mode="constant", cval=255)
         energy_tbl = np.abs(laplacian_image)
 
-        return energy_tbl  # Return the computed energy table
+        return cast(npt.NDArray[np.float32], energy_tbl)
