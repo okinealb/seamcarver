@@ -15,12 +15,15 @@ The algorithm finds low-energy connected pixel paths (seams) and removes or high
 - **Control inputs**:
   - operation (`resize`, `remove`, `highlight`) (`seamcarver/core.py:125-160`)
   - direction (`VERTICAL` or `HORIZONTAL`) (`seamcarver/constants.py:10-13`)
-  - number of seams (`num_seams`) (`seamcarver/core.py:140`, `seamcarver/calculator.py:80-81`)
+  - number of seams (`num_seams`), which must satisfy
+    `1 <= num_seams < oriented dimension`
 - **Output from seam finder**: boolean seam mask `(H, W)` where `True` denotes seam pixels (`seamcarver/calculator.py:93-95`, `123-127`).
 
 ## 3. Direction handling
 
-Only vertical seam logic is implemented in the core algorithm. Horizontal operations are handled by transposing the image before and after the operation using `transpose_if_horizontal` (`seamcarver/core.py:21-31`, `45-50`, `136`, `150`).
+Only vertical seam logic is implemented in the calculator. `SeamCarver` creates a
+local transposed view for horizontal requests and stores the completed result only
+after processing succeeds (`src/seamcarver/core.py`, `_orient_image`).
 
 ## 4. Energy-map generation
 
@@ -66,7 +69,10 @@ For a call requesting `num_seams`:
 
 - **Remove**: drop seam pixels and reshape to reduce width by seam count (`seamcarver/core.py:145-148`).
 - **Highlight**: color seam pixels without removing them (`seamcarver/core.py:159-160`, `seamcarver/constants.py:16-17`).
-- **Resize**: perform vertical then horizontal removals to reach target dimensions (`seamcarver/core.py:132-134`).
+- **Resize**: shrink one or both dimensions, or leave them unchanged. Enlargement
+  is rejected until seam addition is implemented. A failed resize restores the
+  original image.
+- **Add**: explicitly raises `NotImplementedError`; seam addition remains deferred.
 
 ## 9. Complexity summary
 
