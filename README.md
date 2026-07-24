@@ -145,26 +145,15 @@ Current implementation includes several practical optimizations:
 
 ## Benchmarking
 
-Benchmark tooling is configured in `pyproject.toml` via `pytest-benchmark`, and benchmark fixtures are defined in `benchmarks/conftest.py`.
-
-To run benchmarks:
+The benchmark suite uses deterministic generated images and runs separately
+from the unit tests:
 
 ```bash
-pytest benchmarks
+uv run --frozen pytest benchmarks
 ```
 
-### Results (template)
-
-#### Seam Removal Benchmark Results
-
-| Image Size   | 10 seams | 20 seams | 40 seams | 80 seams | 160 seams |
-|--------------|----------|----------|----------|----------|-----------|
-| 256x256      | 0.024s   | 0.036s   | 0.069s   | 0.128s   | 0.247s    |
-| 512x512      | 0.062s   | 0.089s   | 0.148s   | 0.279s   | 0.532s    |
-| 1024x1024    | 0.192s   | 0.244s   | 0.370s   | 0.623s   | 1.193s    |
-
-> Times reflect random RGB images, running on Macbook Air M2.  
-> Seam removal scales linearly with seam count for a fixed image size.
+See the [benchmark methodology](docs/benchmarking.md) for the measured cases
+and comparison procedure.
 
 ## Repository Structure
 
