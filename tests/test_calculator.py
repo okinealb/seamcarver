@@ -20,6 +20,7 @@ Dependencies:
 
 # Import standard library packages
 import numpy as np
+
 # Import the project-specific packages
 from seamcarver.calculator import SeamCalculator
 from seamcarver.methods import GradientEnergy
@@ -30,6 +31,7 @@ def test_initialization(calculator):
     assert isinstance(calculator, SeamCalculator)
     assert isinstance(calculator.method, GradientEnergy)
 
+
 def test_call(calculator, sample_image):
     """Test the seam finding functionality."""
     mask = calculator(sample_image, 1)
@@ -37,9 +39,10 @@ def test_call(calculator, sample_image):
     assert mask.ndim == 2
     assert mask.shape == sample_image.shape[:2]
     assert np.issubdtype(mask.dtype, np.bool)
-    
+
     # TODO: Check there are as many seams as requested
-    
+
+
 def test_compute_table(calculator, sample_image):
     """Test the energy table computation."""
     energy = calculator._compute_energy(sample_image)
@@ -48,7 +51,8 @@ def test_compute_table(calculator, sample_image):
     assert np.issubdtype(energy.dtype, np.floating)
     # Value checks
     assert np.all(energy >= 0)
-    
+
+
 def test_compute_costs(calculator, sample_image):
     """Test the cost computation."""
     energy = calculator._compute_energy(sample_image)
@@ -58,6 +62,7 @@ def test_compute_costs(calculator, sample_image):
     assert np.issubdtype(costs.dtype, np.floating)
     # Value checks
     assert np.all(costs >= 0)
+
 
 def test_compute_seams(calculator, sample_image):
     """Test the seam computation."""
@@ -69,8 +74,9 @@ def test_compute_seams(calculator, sample_image):
     assert seams.shape == sample_image.shape[:2]
     # Value checks
     assert np.issubdtype(seams.dtype, np.bool)
-    
+
+
 def test_no_changes(calculator):
     """Test that the original image is not modified."""
-    
+
     # TODO: CHECK THE IMAGE IS NOT MODIFIED

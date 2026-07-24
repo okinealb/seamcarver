@@ -14,9 +14,9 @@ Dependencies:
 - SobelEnergy: The main class being tested.
 """
 
-# Import standard library packages
-import pytest
 import numpy as np
+
+# Import standard library packages
 # Import the project-specific packages
 from seamcarver.methods import SobelEnergy
 

@@ -16,6 +16,7 @@ Dependencies:
 
 # Import standard library packages
 import numpy as np
+
 # Import the project-specific packages
 from seamcarver.methods import LaplacianEnergy
 

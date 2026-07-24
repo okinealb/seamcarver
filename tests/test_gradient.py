@@ -17,9 +17,11 @@ Dependencies:
 
 # Import standard library packages
 import numpy as np
+
+from seamcarver.constants import BORDER_ENERGY
+
 # Import the project-specific packages
 from seamcarver.methods import GradientEnergy
-from seamcarver.constants import BORDER_ENERGY
 
 
 def test_energy_map(sample_image):
@@ -30,9 +32,9 @@ def test_energy_map(sample_image):
     assert energy_tbl.shape == sample_image.shape[:2]
     assert np.issubdtype(energy_tbl.dtype, np.floating)
     # Border energy checks
-    assert np.all(energy_tbl[:,0] == BORDER_ENERGY)
-    assert np.all(energy_tbl[0,:] == BORDER_ENERGY)
-    assert np.all(energy_tbl[:,-1] == BORDER_ENERGY)
-    assert np.all(energy_tbl[-1,:] == BORDER_ENERGY)
+    assert np.all(energy_tbl[:, 0] == BORDER_ENERGY)
+    assert np.all(energy_tbl[0, :] == BORDER_ENERGY)
+    assert np.all(energy_tbl[:, -1] == BORDER_ENERGY)
+    assert np.all(energy_tbl[-1, :] == BORDER_ENERGY)
     # Internal energy checks
     assert np.all(0 <= energy_tbl[1:-1, 1:-1] <= 255)

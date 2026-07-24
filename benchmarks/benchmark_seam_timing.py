@@ -12,19 +12,18 @@ Usage:
 Results are saved as 'benchmarks/removal_benchmark.png'.
 """
 
+import os
+import sys
 import time
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-import os
-import sys
-
 # Finds the absolute path of the parent directory and adds it to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from seamcarver import SeamCarver, VERTICAL
+from seamcarver import VERTICAL, SeamCarver
 
 IMAGE_SIZES = {
     "Small (256x256)": (256, 256),

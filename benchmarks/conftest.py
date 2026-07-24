@@ -1,15 +1,18 @@
 """Shared fixtures for benchmarks."""
 
-import pytest
-import numpy as np
-from PIL import Image
 from pathlib import Path
+
+import numpy as np
+import pytest
+from PIL import Image
+
 
 @pytest.fixture(scope="session")
 def sample_image():
     """Load sample image once per test session."""
     image_path = Path(__file__).parent.parent / "examples" / "sample.jpg"
-    return np.array(Image.open(image_path).convert('RGB'))
+    return np.array(Image.open(image_path).convert("RGB"))
+
 
 @pytest.fixture(scope="function", params=[100, 1000, 10000])
 def random_image(N):

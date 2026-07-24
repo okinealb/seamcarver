@@ -10,13 +10,14 @@ For more information, see the [Wikipedia article](https://en.wikipedia.org/wiki/
 # Import standard library packages
 import numpy as np
 from scipy.ndimage import laplace
+
 # Import project-specific packages
 from .interface import EnergyMethod
 
 
 class LaplacianEnergy(EnergyMethod):
     """Laplacian energy method for seam carving.
-    
+
     This class implements the Laplacian operator to compute the energy map of an image.
     It inherits from the EnergyMethod interface.
     """
@@ -25,7 +26,7 @@ class LaplacianEnergy(EnergyMethod):
         """Compute the energy map of the image using the Laplacian operator."""
         # Convert the image to grayscale, then apply the Laplacian operator
         grayscale_image = np.mean(image, axis=2).astype(np.float32)
-        laplacian_image = laplace(grayscale_image, mode='constant', cval=255)
+        laplacian_image = laplace(grayscale_image, mode="constant", cval=255)
         energy_tbl = np.abs(laplacian_image)
-        
-        return energy_tbl # Return the computed energy table
+
+        return energy_tbl  # Return the computed energy table
