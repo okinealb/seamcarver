@@ -9,6 +9,7 @@ For more information, see the [Wikipedia article](https://en.wikipedia.org/wiki/
 
 # Import standard library packages
 import numpy as np
+import numpy.typing as npt
 
 from ..constants import BORDER_ENERGY
 
@@ -23,7 +24,7 @@ class GradientEnergy(EnergyMethod):
     image. It inherits from the EnergyMethod interface.
     """
 
-    def __call__(self, image: np.ndarray) -> np.ndarray:
+    def __call__(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.float32]:
         """Compute the energy map of the image using image gradients."""
         # Initialize the energy table with border values
         energy_tbl = np.full(image.shape[:2], BORDER_ENERGY, dtype=np.float32)

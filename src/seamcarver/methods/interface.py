@@ -10,6 +10,7 @@ calculation strategies in seam carving algorithms.
 from abc import ABC, abstractmethod
 
 import numpy as np
+import numpy.typing as npt
 
 
 class EnergyMethod(ABC):
@@ -33,7 +34,7 @@ class EnergyMethod(ABC):
     """
 
     @abstractmethod
-    def __call__(self, image: np.ndarray) -> np.ndarray:
+    def __call__(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.generic]:
         """Compute energy map indicating pixel importance.
 
         Args:

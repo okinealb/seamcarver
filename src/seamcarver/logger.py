@@ -19,7 +19,7 @@ class ColoredFormatter(logging.Formatter):
     }
     RESET = "\033[0m"
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         if sys.stderr.isatty():  # Only colorize if terminal supports it
             record = copy.copy(record)
             color = self.COLORS.get(record.levelname, "")
@@ -64,6 +64,7 @@ def setup_cli_logging(
         console_format = "%(message)s"
 
     # Apply formatter
+    formatter: logging.Formatter
     if color and sys.stderr.isatty():
         formatter = ColoredFormatter(console_format)
     else:
