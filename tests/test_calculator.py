@@ -60,6 +60,20 @@ def test_call_accepts_numpy_integer(calculator, sample_image):
     assert mask.sum() == sample_image.shape[0]
 
 
+def test_mask_to_index_returns_flat_indices(calculator):
+    """Mask positions use row-major flat indexing."""
+    mask = np.array(
+        [
+            [False, True, False],
+            [True, False, True],
+        ]
+    )
+
+    indices = calculator.mask_to_index(mask)
+
+    assert np.array_equal(indices, [1, 3, 5])
+
+
 @pytest.mark.parametrize(
     ("num_seams", "exception"),
     [

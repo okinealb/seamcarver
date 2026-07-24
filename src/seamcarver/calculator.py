@@ -138,8 +138,7 @@ class SeamCalculator:
         Returns:
             1D array of indices for seam pixels.
         """
-        # Get the indices where the mask is True
-        return np.argwhere(mask).flatten()
+        return np.flatnonzero(mask)
 
     def _get_batch_size(self, width: int) -> int:
         """Calculate optimal batch size based on image width."""
