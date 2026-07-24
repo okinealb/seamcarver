@@ -8,7 +8,10 @@ The algorithm finds low-energy connected pixel paths (seams) and removes or high
 
 ## 2. Inputs and outputs
 
-- **Input image**: RGB `numpy.ndarray` with shape `(H, W, 3)` (`seamcarver/core.py:95-104`, `seamcarver/calculator.py:90-91`).
+- **Input image**: `SeamCarver` owns an RGB `uint8` NumPy array with shape
+  `(H, W, 3)`. NumPy inputs must already use that representation and are copied.
+  Integer nested lists are range-checked and converted. PIL images and filesystem
+  paths are converted to RGB (`src/seamcarver/_image.py`, `normalize_image`).
 - **Control inputs**:
   - operation (`resize`, `remove`, `highlight`) (`seamcarver/core.py:125-160`)
   - direction (`VERTICAL` or `HORIZONTAL`) (`seamcarver/constants.py:10-13`)

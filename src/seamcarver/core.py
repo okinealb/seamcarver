@@ -8,18 +8,22 @@ For more information on seam carving, refer to the
 [Wikipedia article](https://en.wikipedia.org/wiki/Seam_carving).
 """
 
+import numpy as np
+
 # Import general packages
 from PIL import Image
-import numpy as np
+
 # Import project-specific packages
+from ._image import ImageInput, normalize_image
 from .calculator import SeamCalculator
-from .constants import VERTICAL, HORIZONTAL, HIGHLIGHT_COLOR
+from .constants import HIGHLIGHT_COLOR, HORIZONTAL, VERTICAL
 from .methods import EnergyMethod, GradientEnergy
 
 
 # Decorators
 def transpose_if_horizontal(func):
     """Decorator to transpose the image if the direction is horizontal."""
+
     def wrapper(self: "SeamCarver", direction: int, *args, **kwargs) -> None:
         transpose = direction == HORIZONTAL
         if transpose:
@@ -28,6 +32,7 @@ def transpose_if_horizontal(func):
         if transpose:
             self.image = np.transpose(self.image, (1, 0, 2))
         return result
+
     return wrapper
 
 
@@ -57,117 +62,93 @@ class SeamCarver:
     calculator: SeamCalculator
     """SeamCalculator: instance for calculating seams."""
 
-
     def __init__(
         self,
-        image: np.ndarray | list[list[int]] | Image.Image | str,
+        image: ImageInput,
         method: EnergyMethod = GradientEnergy(),
         verbose: bool = False,
     ):
         """Initialize the SeamCarver with an image and configuration.
-    
+
         Args:
             image: Input image in various supported formats:
-                - np.ndarray: Direct numpy array (height, width, channels)
-                - list[list[int]]: Doubly nested list of pixel values
-                - Image.Image: PIL Image object
-                - str: Path to image file
+                - np.ndarray: RGB uint8 array shaped (height, width, 3)
+                - list: Rectangular RGB integer data with values from 0 to 255
+                - Image.Image: PIL image converted to RGB
+                - str or os.PathLike: Path to an image converted to RGB
             method (EnergyMethod): Energy calculation method for seam detection.
                 Defaults to GradientEnergy().
             verbose (bool): Enable verbose output during operations.
                 Defaults to False.
-        
+
         Raises:
-            FileNotFoundError: If image file path is invalid.
-            ValueError: If image format is unsupported.
-            TypeError: If image type is invalid.
+            FileNotFoundError: If an image path does not exist.
+            ValueError: If image contents, dimensions, channels, or dtype are invalid.
+            TypeError: If the image type is unsupported.
             MemoryError: If insufficient memory to load image.
-        
+
         Examples:
             >>> from seamcarver import SeamCarver, SobelEnergy
             >>> carver = SeamCarver("path/to/image.jpg")
             >>> carver = SeamCarver(image_array, method=SobelEnergy())
             >>> carver = SeamCarver(pil_image, verbose=True)
         """
-        
-        # Check for exceptions during initialization
-        try:
-            if isinstance(image, np.ndarray):
-                self.image = image
-            elif isinstance(image, list):
-                self.image = np.array(image, dtype=np.uint8)
-            elif isinstance(image, Image.Image):
-                self.image = np.array(image.convert("RGB"), dtype=np.uint8)
-            elif isinstance(image, str):
-                with Image.open(image) as img:
-                    self.image = np.array(img.convert("RGB"), dtype=np.uint8)
-            else:
-                raise ValueError(
-                    "Invalid image input. Must be one of np.ndarray, list, "
-                    "Image.Image, or str."
-                )
 
-            # Initialize other parameters
-            self.verbose = verbose
-            self.calculator = SeamCalculator(method)
-
-        # Handle errors initializing the SeamCarver
-        except FileNotFoundError as e:
-            raise ValueError(f"Could not load image from path: {image}") from e
-
+        self.image = normalize_image(image)
+        self.verbose = verbose
+        self.calculator = SeamCalculator(method)
 
     @property
     def shape(self) -> tuple[int, int, int]:
         """tuple[int, int, int]: dimensions of image as (rows, cols, channels)."""
         return self.image.shape
 
-
     def resize(
-        self, 
-        height: int, 
+        self,
+        height: int,
         width: int,
     ) -> None:
         """Resize the image to the specified height and width."""
-        
+
         # Remove seams until the image reaches the desired dimensions
         self.remove(direction=VERTICAL, num_seams=self.shape[1] - width)
         self.remove(direction=HORIZONTAL, num_seams=self.shape[0] - height)
 
     @transpose_if_horizontal
     def remove(
-        self, 
-        direction: int, 
+        self,
+        direction: int,
         num_seams: int,
     ) -> None:
         """Remove the minimum seam(s) from the image."""
-    
+
         # Calculate the seam mask and remove it from the image
         mask = self.calculator(self.image, num_seams)
         self.image = self.image[~mask].reshape(self.shape[0], -1, 3)
 
     @transpose_if_horizontal
     def add(
-        self, 
+        self,
         direction: int,
         num_seams: int,
     ) -> None:
         """Duplicate and add the minimum seam(s) from the image."""
-        
+
         # Calculate the seam mask and duplicate the seams
         mask = self.calculator(self.image, num_seams)
-        
-        #seams = self.image[mask].repeat(2) # this should double the occurence of each
+
+        # seams = self.image[mask].repeat(2) # this should double the occurence of each
         # thus for the seams [1, 2, 3] -> [1, 1, 2, 2, 3, 3]
-        
+
         # Create the new image
         image = np.zeros((self.shape[0], self.shape[1] + num_seams, 3), dtype=np.uint16)
-        # index into the image with the boolean mask and the 
+        # index into the image with the boolean mask and the
         image[mask]
 
     @transpose_if_horizontal
     def highlight(
-        self, 
-        direction: int = VERTICAL, 
+        self,
+        direction: int = VERTICAL,
         num_seams: int = 1,
         color: list[int] = HIGHLIGHT_COLOR,
     ) -> None:
@@ -180,9 +161,9 @@ class SeamCarver:
     def display(self) -> None:
         """Display the current state of the image."""
         Image.fromarray(self.image).show()
-        
-    def save(self, output_path: str = 'output.jpg') -> None:
-        """Save the carved image to the specified path."""    
+
+    def save(self, output_path: str = "output.jpg") -> None:
+        """Save the carved image to the specified path."""
         Image.fromarray(self.image).save(output_path)
 
 
