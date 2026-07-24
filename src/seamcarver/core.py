@@ -8,6 +8,8 @@ For more information on seam carving, refer to the
 [Wikipedia article](https://en.wikipedia.org/wiki/Seam_carving).
 """
 
+from typing import SupportsIndex
+
 import numpy as np
 
 # Import general packages
@@ -15,25 +17,17 @@ from PIL import Image
 
 # Import project-specific packages
 from ._image import ImageInput, normalize_image
+from ._validation import validate_direction, validate_resize_target
 from .calculator import SeamCalculator
 from .constants import HIGHLIGHT_COLOR, HORIZONTAL, VERTICAL
 from .methods import EnergyMethod, GradientEnergy
 
 
-# Decorators
-def transpose_if_horizontal(func):
-    """Decorator to transpose the image if the direction is horizontal."""
-
-    def wrapper(self: "SeamCarver", direction: int, *args, **kwargs) -> None:
-        transpose = direction == HORIZONTAL
-        if transpose:
-            self.image = np.transpose(self.image, (1, 0, 2))
-        result = func(self, direction=VERTICAL, *args, **kwargs)
-        if transpose:
-            self.image = np.transpose(self.image, (1, 0, 2))
-        return result
-
-    return wrapper
+def _orient_image(image: np.ndarray, direction: int) -> np.ndarray:
+    """Return an image oriented for vertical seam processing."""
+    if direction == HORIZONTAL:
+        return np.transpose(image, (1, 0, 2))
+    return image
 
 
 # Main class for seam carving operations
@@ -105,58 +99,58 @@ class SeamCarver:
 
     def resize(
         self,
-        height: int,
-        width: int,
+        height: SupportsIndex,
+        width: SupportsIndex,
     ) -> None:
-        """Resize the image to the specified height and width."""
+        """Shrink the image to positive dimensions no larger than its current size.
 
-        # Remove seams until the image reaches the desired dimensions
-        self.remove(direction=VERTICAL, num_seams=self.shape[1] - width)
-        self.remove(direction=HORIZONTAL, num_seams=self.shape[0] - height)
+        The image is restored if either directional removal fails.
+        """
+        height = validate_resize_target("height", height, self.shape[0])
+        width = validate_resize_target("width", width, self.shape[1])
+        original_image = self.image
 
-    @transpose_if_horizontal
+        try:
+            if width < self.shape[1]:
+                self.remove(direction=VERTICAL, num_seams=self.shape[1] - width)
+            if height < self.shape[0]:
+                self.remove(direction=HORIZONTAL, num_seams=self.shape[0] - height)
+        except BaseException:
+            # Restore state even when resizing is interrupted
+            self.image = original_image
+            raise
+
     def remove(
         self,
-        direction: int,
-        num_seams: int,
+        direction: SupportsIndex,
+        num_seams: SupportsIndex,
     ) -> None:
-        """Remove the minimum seam(s) from the image."""
+        """Remove one or more seams in a supported direction."""
+        direction = validate_direction(direction)
+        oriented_image = _orient_image(self.image, direction)
+        mask = self.calculator(oriented_image, num_seams)
+        carved_image = oriented_image[~mask].reshape(oriented_image.shape[0], -1, 3)
+        self.image = _orient_image(carved_image, direction)
 
-        # Calculate the seam mask and remove it from the image
-        mask = self.calculator(self.image, num_seams)
-        self.image = self.image[~mask].reshape(self.shape[0], -1, 3)
-
-    @transpose_if_horizontal
     def add(
         self,
-        direction: int,
-        num_seams: int,
+        direction: SupportsIndex,
+        num_seams: SupportsIndex,
     ) -> None:
-        """Duplicate and add the minimum seam(s) from the image."""
+        """Report that seam addition is not implemented."""
+        raise NotImplementedError("Seam addition is not implemented.")
 
-        # Calculate the seam mask and duplicate the seams
-        mask = self.calculator(self.image, num_seams)
-
-        # seams = self.image[mask].repeat(2) # this should double the occurence of each
-        # thus for the seams [1, 2, 3] -> [1, 1, 2, 2, 3, 3]
-
-        # Create the new image
-        image = np.zeros((self.shape[0], self.shape[1] + num_seams, 3), dtype=np.uint16)
-        # index into the image with the boolean mask and the
-        image[mask]
-
-    @transpose_if_horizontal
     def highlight(
         self,
-        direction: int = VERTICAL,
-        num_seams: int = 1,
+        direction: SupportsIndex = VERTICAL,
+        num_seams: SupportsIndex = 1,
         color: list[int] = HIGHLIGHT_COLOR,
     ) -> None:
-        """Highlight the minimum seam(s) in the image."""
-
-        # Calculate the seam mask and apply the highlight color
-        mask = self.calculator(self.image, num_seams)
-        self.image[mask] = color
+        """Highlight one or more seams in a supported direction."""
+        direction = validate_direction(direction)
+        oriented_image = _orient_image(self.image, direction)
+        mask = self.calculator(oriented_image, num_seams)
+        oriented_image[mask] = color
 
     def display(self) -> None:
         """Display the current state of the image."""

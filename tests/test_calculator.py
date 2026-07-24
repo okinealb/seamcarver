@@ -20,6 +20,7 @@ Dependencies:
 
 # Import standard library packages
 import numpy as np
+import pytest
 
 # Import the project-specific packages
 from seamcarver.calculator import SeamCalculator
@@ -39,8 +40,33 @@ def test_call(calculator, sample_image):
     assert mask.ndim == 2
     assert mask.shape == sample_image.shape[:2]
     assert np.issubdtype(mask.dtype, np.bool)
+    assert mask.sum() == sample_image.shape[0]
 
-    # TODO: Check there are as many seams as requested
+
+def test_call_accepts_numpy_integer(calculator, sample_image):
+    """NumPy integer seam counts follow Python's integer protocol."""
+    mask = calculator(sample_image, np.int64(1))
+
+    assert mask.sum() == sample_image.shape[0]
+
+
+@pytest.mark.parametrize(
+    ("num_seams", "exception"),
+    [
+        (-1, ValueError),
+        (0, ValueError),
+        (3, ValueError),
+        (4, ValueError),
+        ("1", TypeError),
+        (1.0, TypeError),
+        (True, TypeError),
+        (np.bool_(True), TypeError),
+    ],
+)
+def test_invalid_num_seams(calculator, sample_image, num_seams, exception):
+    """Direct calculator calls enforce the seam-count contract."""
+    with pytest.raises(exception):
+        calculator(sample_image, num_seams)
 
 
 def test_compute_table(calculator, sample_image):
@@ -76,7 +102,10 @@ def test_compute_seams(calculator, sample_image):
     assert np.issubdtype(seams.dtype, np.bool)
 
 
-def test_no_changes(calculator):
+def test_no_changes(calculator, sample_image):
     """Test that the original image is not modified."""
+    original = sample_image.copy()
 
-    # TODO: CHECK THE IMAGE IS NOT MODIFIED
+    calculator(sample_image, 1)
+
+    assert np.array_equal(sample_image, original)

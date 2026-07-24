@@ -28,6 +28,21 @@ from seamcarver.constants import HORIZONTAL, VERTICAL
 
 # Import the project-specific packages
 from seamcarver.core import SeamCalculator, SeamCarver
+from seamcarver.methods import EnergyMethod
+
+
+class FailingEnergy(EnergyMethod):
+    """Energy method used to verify image-state recovery."""
+
+    def __init__(self, fail_on_call=1):
+        self.calls = 0
+        self.fail_on_call = fail_on_call
+
+    def __call__(self, image):
+        self.calls += 1
+        if self.calls == self.fail_on_call:
+            raise RuntimeError("energy calculation failed")
+        return np.zeros(image.shape[:2], dtype=float)
 
 
 def test_load_from_array(sample_image):
@@ -151,17 +166,61 @@ def test_resize_image(carver, sample_image):
     assert carver.image.shape == shape
 
 
-def test_highlight_image(carver):
-    """Test the image highlighting functionality."""
-    pytest.skip("Skipping seam removal tests as they are not implemented yet.")
-    carver.highlight(VERTICAL)
-    raise (NotImplementedError("Highlighting not implemented yet."))
+def test_resize_to_current_shape_is_no_op(carver):
+    """An unchanged target does not invoke seam removal."""
+    original = carver.image.copy()
+
+    carver.resize(np.int64(carver.shape[0]), np.int64(carver.shape[1]))
+
+    assert np.array_equal(carver.image, original)
+
+
+@pytest.mark.parametrize(
+    ("height", "width", "exception"),
+    [
+        (0, 2, ValueError),
+        (2, 0, ValueError),
+        (4, 2, ValueError),
+        (2, 4, ValueError),
+        (2.0, 2, TypeError),
+        (2, True, TypeError),
+    ],
+)
+def test_invalid_resize_target_leaves_image_unchanged(carver, height, width, exception):
+    """Resize validates the entire request before changing image state."""
+    original = carver.image.copy()
+
+    with pytest.raises(exception):
+        carver.resize(height, width)
+
+    assert np.array_equal(carver.image, original)
+
+
+def test_resize_failure_restores_original_image(sample_image):
+    """A failure after one directional removal rolls back the resize."""
+    carver = SeamCarver(sample_image, method=FailingEnergy(fail_on_call=2))
+    original = carver.image.copy()
+
+    with pytest.raises(RuntimeError, match="energy calculation failed"):
+        carver.resize(2, 2)
+
+    assert np.array_equal(carver.image, original)
+
+
+def test_highlight_image_accepts_positional_arguments(carver):
+    """Highlight preserves its declared positional call form."""
+    color = [1, 2, 3]
+
+    carver.highlight(VERTICAL, 1, color)
+
+    highlighted = np.all(carver.image == color, axis=-1)
+    assert highlighted.sum() == carver.shape[0]
 
 
 def test_vertical_seam_removal(carver):
     """Test vertical seam removal."""
     original_shape = carver.shape
-    carver.remove(num_seams=1, direction=VERTICAL)
+    carver.remove(VERTICAL, np.int64(1))
     assert carver.image.shape[1] == original_shape[1] - 1
     assert carver.image.shape[0] == original_shape[0]
 
@@ -172,3 +231,75 @@ def test_horizontal_seam_removal(carver):
     carver.remove(num_seams=1, direction=HORIZONTAL)
     assert carver.image.shape[0] == original_shape[0] - 1
     assert carver.image.shape[1] == original_shape[1]
+
+
+@pytest.mark.parametrize(
+    ("direction", "exception"),
+    [
+        (-1, ValueError),
+        (2, ValueError),
+        ("vertical", TypeError),
+        (1.0, TypeError),
+        (True, TypeError),
+        (np.bool_(False), TypeError),
+    ],
+)
+def test_invalid_direction_leaves_image_unchanged(carver, direction, exception):
+    """Invalid directions fail before image processing."""
+    original = carver.image.copy()
+
+    with pytest.raises(exception):
+        carver.remove(direction, 1)
+
+    assert np.array_equal(carver.image, original)
+
+
+@pytest.mark.parametrize(
+    ("num_seams", "exception"),
+    [
+        (-1, ValueError),
+        (0, ValueError),
+        (3, ValueError),
+        (4, ValueError),
+        ("1", TypeError),
+        (1.0, TypeError),
+        (True, TypeError),
+        (np.bool_(True), TypeError),
+    ],
+)
+def test_invalid_seam_count_leaves_image_unchanged(carver, num_seams, exception):
+    """Invalid seam counts fail without changing image state."""
+    original = carver.image.copy()
+
+    with pytest.raises(exception):
+        carver.remove(VERTICAL, num_seams)
+
+    assert np.array_equal(carver.image, original)
+
+
+def test_horizontal_count_uses_image_height():
+    """Horizontal count bounds apply to rows, not columns."""
+    carver = SeamCarver(np.zeros((2, 4, 3), dtype=np.uint8))
+    original = carver.image.copy()
+
+    with pytest.raises(ValueError):
+        carver.remove(HORIZONTAL, 2)
+
+    assert np.array_equal(carver.image, original)
+
+
+def test_horizontal_failure_leaves_image_unchanged(sample_image):
+    """Horizontal processing never stores a temporary transposed state."""
+    carver = SeamCarver(sample_image, method=FailingEnergy())
+    original = carver.image.copy()
+
+    with pytest.raises(RuntimeError, match="energy calculation failed"):
+        carver.remove(HORIZONTAL, 1)
+
+    assert np.array_equal(carver.image, original)
+
+
+def test_add_is_explicitly_not_implemented(carver):
+    """Seam addition remains deferred instead of failing incidentally."""
+    with pytest.raises(NotImplementedError, match="Seam addition"):
+        carver.add(VERTICAL, 1)

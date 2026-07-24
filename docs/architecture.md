@@ -35,7 +35,9 @@ The repository is organized into four primary layers:
 4. **Energy strategy layer (`seamcarver/methods/`)**  
    Defines the `EnergyMethod` interface and concrete implementations (`GradientEnergy`, `SobelEnergy`, `LaplacianEnergy`) (`seamcarver/methods/interface.py:13-35`, `seamcarver/methods/gradient.py:16-31`, `seamcarver/methods/sobel.py:16-30`, `seamcarver/methods/laplacian.py:16-29`).
 
-Supporting modules provide constants and logging (`seamcarver/constants.py:10-17`, `seamcarver/logger.py:8-66`).
+Private boundary modules normalize image inputs (`src/seamcarver/_image.py`) and
+operation parameters (`src/seamcarver/_validation.py`). Other supporting modules
+provide constants and logging.
 
 ## 2. High-level responsibilities
 
@@ -46,10 +48,15 @@ Supporting modules provide constants and logging (`seamcarver/constants.py:10-17
 - Owns an RGB `uint8` NumPy array shaped `(height, width, 3)`. NumPy inputs must
   already satisfy that contract. Integer lists are validated before conversion;
   PIL images and file inputs are converted to RGB.
+- Accepts integer-like operation parameters at public boundaries. The validation
+  module converts them to built-in `int` values before algorithmic processing.
 - Exposes public image operations:
-  - `resize(height, width)` removes vertical then horizontal seams (`seamcarver/core.py:125-135`).
-  - `remove(direction, num_seams)` removes seam pixels using returned mask (`seamcarver/core.py:136-149`).
-  - `highlight(direction, num_seams, color)` marks seam pixels (`seamcarver/core.py:150-160`).
+  - `resize(height, width)` validates both targets before shrinking and restores
+    the original image if processing fails.
+  - `remove(direction, num_seams)` removes seam pixels using the returned mask.
+  - `highlight(direction, num_seams, color)` marks seam pixels.
+  - `add(direction, num_seams)` is reserved for future work and currently raises
+    `NotImplementedError`.
 - Owns the `SeamCalculator` instance (`seamcarver/core.py:111-113`).
 
 ### 2.2 `SeamCalculator`
@@ -75,7 +82,8 @@ Supporting modules provide constants and logging (`seamcarver/constants.py:10-17
    `SeamCarver.image` is the mutable source of truth (`seamcarver/core.py:53-54`, `120-123`).
 
 3. **Direction normalization**  
-   Horizontal requests are transposed before operation and restored afterward via `transpose_if_horizontal` (`seamcarver/core.py:21-31`, `136`, `150`).
+   Horizontal requests use a local transposed view. The stored image is updated
+   only after seam processing succeeds (`src/seamcarver/core.py`, `_orient_image`).
 
 4. **Energy map generation**  
    `SeamCalculator` calls the configured energy method and receives a 2D energy table (`seamcarver/calculator.py:179-183`).
@@ -98,7 +106,8 @@ Supporting modules provide constants and logging (`seamcarver/constants.py:10-17
   - `remove` → `SeamCarver.remove`
   - `highlight` → `SeamCarver.highlight` (+ display)  
   (`seamcarver/cli.py:99-121`)
-- `resize` performs two directional removals in sequence (`seamcarver/core.py:132-134`).
+- `resize` validates both dimensions, then performs only the required directional
+  removals. Equal dimensions are no-ops; larger dimensions are rejected.
 - `SeamCalculator.__call__` iterates until requested seams are processed, using `_process` to extract as many seams as possible before image compaction (`seamcarver/calculator.py:112-122`, `129-155`).
 
 ## 5. Extensibility boundaries

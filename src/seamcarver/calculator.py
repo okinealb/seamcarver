@@ -9,10 +9,12 @@ For more information on seam carving, refer to the
 [Wikipedia article](https://en.wikipedia.org/wiki/Seam_carving).
 """
 
-# Import standard library packages
+from typing import SupportsIndex
+
 import numpy as np
 
 # import project specific packages
+from ._validation import validate_num_seams
 from .methods import EnergyMethod, GradientEnergy
 
 
@@ -77,18 +79,18 @@ class SeamCalculator:
     def __call__(
         self,
         image: np.ndarray,
-        num_seams: int,
+        num_seams: SupportsIndex,
     ) -> np.ndarray:
         """Find optimal seams in image and return as boolean mask.
 
-        Seams are removed directly from the image in-place, and retained pixel
-        indices are tracked via a flattened map. This allows for implicit
-        reconstruction of all seam positions without explicit seam tracking
-        during the process.
+        Seams are removed from an internal image copy, and retained pixel indices
+        are tracked via a flattened map. This allows reconstruction of all seam
+        positions without mutating the caller's image.
 
         Args:
             image: Input image as numpy array (height, width, channels).
-            num_seams: Number of seams to find. Must be positive.
+            num_seams: Number of seams to find. Must be at least one and less
+                than the image width.
 
         Returns:
             mask: (height, width) where True indicates seam pixels.
@@ -98,10 +100,11 @@ class SeamCalculator:
             >>> assert mask.sum() == image.shape[0]  # One pixel per row
         """
 
+        H, W = image.shape[:2]
+        num_seams = validate_num_seams(num_seams, W)
+
         # Retain a copy of the original image to avoid modifying it
         image = image.copy()
-
-        H, W = image.shape[:2]
 
         # The kept pixels, traced through batches and reshaping
         kept = np.arange(H * W)
