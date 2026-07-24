@@ -15,7 +15,7 @@ from .constants import HIGHLIGHT_COLOR, HORIZONTAL, VERTICAL
 
 # Import project-specific packages
 from .core import SeamCarver
-from .logger import get_logger, setup_cli_logging
+from .logger import setup_cli_logging
 from .methods import SobelEnergy
 
 
@@ -117,13 +117,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Get the command line inputs
     args = parser.parse_args(argv)
 
-    # Set up logging based on the command line arguments, then get the logger
-    setup_cli_logging(
+    # Set up logging based on the command line arguments
+    logger = setup_cli_logging(
         verbose=args.verbose,
         quiet=args.quiet,
         log_file=args.log_file,
     )
-    logger = get_logger(__name__)
 
     try:
         logger.info(f"Loading image from {args.input}...")
