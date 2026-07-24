@@ -143,6 +143,18 @@ Current implementation includes several practical optimizations:
 - Boolean-mask reshape strategy for seam removal
 - Adaptive seam batch sizing logic based on image width
 
+## Development
+
+Install the locked development environment and run the repository checks:
+
+```bash
+uv sync --extra dev --frozen
+uv run --frozen ruff check src tests benchmarks
+uv run --frozen black --check --target-version py310 src tests benchmarks
+uv run --frozen mypy
+uv run --frozen pytest
+```
+
 ## Benchmarking
 
 The benchmark suite uses deterministic generated images and runs separately
