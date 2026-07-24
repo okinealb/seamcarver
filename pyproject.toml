@@ -71,7 +71,7 @@ dev = [
 
 # Configuration for setuptools to find packages correctly
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["seamcarver*"]
 exclude = ["tests*", "test*", "build*", "dist*", "*.egg-info*"]
 
@@ -104,8 +104,5 @@ group_by = "name"
 
 [tool.pytest_cov]
 omit = [
-    "imports.py",
     "*init*.py",
-    "profile_seamcarver.py",
-    "test.py",
 ]
