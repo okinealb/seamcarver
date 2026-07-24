@@ -81,7 +81,6 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = [
     "--strict-config",
-    "--verbose",
     "--benchmark-columns=min,max,mean,stddev,median,ops",
     "--benchmark-sort=mean",
     "--benchmark-group-by=group",
