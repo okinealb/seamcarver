@@ -37,4 +37,14 @@ def test_energy_map(sample_image):
     assert np.all(energy_tbl[:, -1] == BORDER_ENERGY)
     assert np.all(energy_tbl[-1, :] == BORDER_ENERGY)
     # Internal energy checks
-    assert np.all(0 <= energy_tbl[1:-1, 1:-1] <= 255)
+    assert np.all(energy_tbl[1:-1, 1:-1] >= 0)
+
+
+def test_energy_map_avoids_uint8_overflow():
+    """Gradient arithmetic widens image bytes before subtraction and squaring."""
+    image = np.zeros((3, 3, 3), dtype=np.uint8)
+    image[1, 2] = 240
+
+    energy = GradientEnergy()(image)
+
+    assert energy[1, 1] == np.float32(np.sqrt(3 * 240**2))
