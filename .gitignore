@@ -28,6 +28,7 @@ pip-delete-this-directory.txt
 # PyTest / coverage reports
 .pytest_cache/
 .benchmarks/
+.ruff_cache/
 
 # Environments
 .env
