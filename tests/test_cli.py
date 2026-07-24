@@ -244,22 +244,75 @@ def test_invalid_image_file(capsys):
     assert exc_info.value.code != 0
 
 
-def test_invalid_dimensions(capsys, sample_image):
-    """Test error handling for invalid dimensions."""
-    pytest.skip(
-        "Skipping test for invalid command as CLI commands are not implemented yet."
-    )
-    args = [sample_image, "resize", "0", "500"]  # Invalid height
+@pytest.mark.parametrize(
+    "command",
+    [
+        ["resize", "0", "500"],
+        ["remove", "--count", "0"],
+        ["highlight", "--count", "0"],
+    ],
+    ids=["resize", "remove", "highlight"],
+)
+def test_processing_error_exits_without_saving(command, capsys, sample_image, tmp_path):
+    """Processing failures report an error and do not write output."""
+    output = tmp_path / "output.png"
+    args = [sample_image, *command, "--output", str(output)]
 
     with pytest.raises(SystemExit) as exc_info:
         main(args)
 
-    # Capture the output
     captured = capsys.readouterr()
 
-    # Should show error
-    assert captured.err != ""
-    assert exc_info.value.code != 0
+    assert exc_info.value.code == 1
+    assert "Invalid input:" in captured.err
+    assert "Traceback" not in captured.err
+    assert not output.exists()
+
+
+@pytest.mark.parametrize(
+    ("verbose", "shows_traceback"),
+    [(False, False), (True, True)],
+    ids=["default", "verbose"],
+)
+def test_unexpected_processing_error_diagnostics(
+    verbose, shows_traceback, capsys, sample_image, monkeypatch
+):
+    """Unexpected failures only include a traceback in verbose mode."""
+
+    def fail_resize(*args, **kwargs):
+        raise RuntimeError("resize failed")
+
+    monkeypatch.setattr("seamcarver.cli.SeamCarver.resize", fail_resize)
+    args = [sample_image]
+    if verbose:
+        args.append("--verbose")
+    args.extend(["resize", "200", "500"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(args)
+
+    captured = capsys.readouterr()
+
+    assert exc_info.value.code == 1
+    assert "An unexpected error occurred." in captured.err
+    assert ("Traceback" in captured.err) is shows_traceback
+
+
+def test_keyboard_interrupt_exits_130(capsys, sample_image, monkeypatch):
+    """Cancellation uses the conventional shell exit code."""
+
+    def interrupt_resize(*args, **kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr("seamcarver.cli.SeamCarver.resize", interrupt_resize)
+
+    with pytest.raises(SystemExit) as exc_info:
+        main([sample_image, "resize", "200", "500"])
+
+    captured = capsys.readouterr()
+
+    assert exc_info.value.code == 130
+    assert "Operation cancelled by user." in captured.err
 
 
 def test_log_file_output(capsys, sample_image, temp_output):

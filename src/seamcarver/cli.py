@@ -9,7 +9,6 @@ It also supports an interactive mode for easier use.
 # Import standard library packages
 import argparse as ap
 import logging
-import sys
 from typing import Sequence
 
 from .constants import HIGHLIGHT_COLOR, HORIZONTAL, VERTICAL
@@ -126,47 +125,47 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
     logger = get_logger(__name__)
 
-    # Initialize the SeamCarver with the provided image
     try:
         logger.info(f"Loading image from {args.input}...")
         carver = SeamCarver(args.input, verbose=args.verbose, method=SobelEnergy())
         logger.debug(f"Image loaded with shape {carver.shape}.")
-    except Exception as e:
-        handle_error(e, logger, verbose=args.verbose)
-        sys.exit(1)
 
-    if args.command == "resize":
-        logger.info(f"Resizing image to {args.height}x{args.width}...")
-        carver.resize(height=args.height, width=args.width)
-        logger.info("Image resized successfully.")
+        if args.command == "resize":
+            logger.info(f"Resizing image to {args.height}x{args.width}...")
+            carver.resize(height=args.height, width=args.width)
+            logger.info("Image resized successfully.")
 
-    elif args.command == "remove":
-        direction = VERTICAL if args.direction == "vertical" else HORIZONTAL
+        elif args.command == "remove":
+            direction = VERTICAL if args.direction == "vertical" else HORIZONTAL
 
-        logger.info(f"Removing {args.count} seams in {args.direction} direction...")
-        carver.remove(direction=direction, num_seams=args.count)
-        logger.info("Seams removed successfully.")
+            logger.info(f"Removing {args.count} seams in {args.direction} direction...")
+            carver.remove(direction=direction, num_seams=args.count)
+            logger.info("Seams removed successfully.")
 
-    elif args.command == "highlight":
-        direction = VERTICAL if args.direction == "vertical" else HORIZONTAL
+        elif args.command == "highlight":
+            direction = VERTICAL if args.direction == "vertical" else HORIZONTAL
 
-        logger.info(f"Highlighting {args.count} seams in {args.direction} direction...")
-        carver.image = carver.highlight(
-            direction=direction, num_seams=args.count, color=args.rgb
-        )
-        logger.info("Seams highlighted successfully.")
-        logger.debug("Displaying highlighted image...")
-        carver.display()
-        logger.debug("Image display completed.")
+            logger.info(
+                f"Highlighting {args.count} seams in {args.direction} direction..."
+            )
+            carver.image = carver.highlight(
+                direction=direction, num_seams=args.count, color=args.rgb
+            )
+            logger.info("Seams highlighted successfully.")
+            logger.debug("Displaying highlighted image...")
+            carver.display()
+            logger.debug("Image display completed.")
 
-    if args.output is not None:
-        try:
+        if args.output is not None:
             logger.info(f"Saving output image to {args.output}...")
             carver.save(output_path=args.output)
             logger.info("Output image saved successfully.")
-        except Exception as e:
-            handle_error(e, logger, verbose=args.verbose)
-            sys.exit(1)
+    except KeyboardInterrupt:
+        logger.warning("Operation cancelled by user.")
+        raise SystemExit(130) from None
+    except Exception as error:
+        handle_error(error, logger, verbose=args.verbose)
+        raise SystemExit(1) from None
 
 
 def handle_error(
@@ -193,14 +192,13 @@ def handle_error(
     elif isinstance(error, MemoryError):
         logger.error("Not enough memory to process the image.")
         logger.error("Try using a smaller image or increasing available memory.")
-    elif isinstance(error, KeyboardInterrupt):
-        logger.warning("Operation cancelled by user.")
     else:
         logger.error("An unexpected error occurred.")
-        if verbose:
-            logger.debug(f"Error details: {error}")
-        else:
+        if not verbose:
             logger.error("Use -v/--verbose for more details.")
+
+    if verbose:
+        logger.debug("Error details:", exc_info=error)
 
 
 if __name__ == "__main__":
