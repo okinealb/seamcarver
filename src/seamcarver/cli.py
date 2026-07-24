@@ -151,7 +151,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         direction = VERTICAL if args.direction == "vertical" else HORIZONTAL
 
         logger.info(f"Highlighting {args.count} seams in {args.direction} direction...")
-        carver.highlight(direction=direction, num_seams=args.count, color=args.rgb)
+        carver.image = carver.highlight(
+            direction=direction, num_seams=args.count, color=args.rgb
+        )
         logger.info("Seams highlighted successfully.")
         logger.debug("Displaying highlighted image...")
         carver.display()

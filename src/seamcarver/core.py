@@ -145,12 +145,16 @@ class SeamCarver:
         direction: SupportsIndex = VERTICAL,
         num_seams: SupportsIndex = 1,
         color: list[int] = HIGHLIGHT_COLOR,
-    ) -> None:
-        """Highlight one or more seams in a supported direction."""
+    ) -> np.ndarray:
+        """Return an independent image with the requested seams highlighted."""
         direction = validate_direction(direction)
         oriented_image = _orient_image(self.image, direction)
         mask = self.calculator(oriented_image, num_seams)
-        oriented_image[mask] = color
+        if direction == HORIZONTAL:
+            mask = mask.T
+        highlighted_image = self.image.copy()
+        highlighted_image[mask] = color
+        return highlighted_image
 
     def display(self) -> None:
         """Display the current state of the image."""
