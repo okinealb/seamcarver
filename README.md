@@ -49,8 +49,19 @@ Seam carving finds connected pixel paths with minimal cumulative energy and remo
 
 ## Installation
 
+This beta is not published under this distribution name. The package named
+`seamcarver` on PyPI is unrelated to this project.
+
+Install a local checkout with standard Python tooling:
+
 ```bash
-pip install seamcarver
+python -m pip install .
+```
+
+For development, install the locked environment with uv:
+
+```bash
+uv sync --extra dev --frozen
 ```
 
 ## Quick Start
