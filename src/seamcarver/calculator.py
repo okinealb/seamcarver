@@ -116,6 +116,8 @@ class SeamCalculator:
         while num_seams > 0:
             # TODO: SET BATCH_SIZE TO NUM_SEAMS FOR EFFICIENCY???
             n, seams = self._process(image, num_seams, batch_size)
+            if n == 0:
+                raise RuntimeError("Seam extraction made no progress.")
             num_seams = num_seams - n
             image = image[~seams].reshape(H, -1, 3)
             # Update the kept indices based on the seams found
@@ -175,14 +177,30 @@ class SeamCalculator:
 
     def _compute_energy(self, image: np.ndarray) -> np.ndarray:
         """Compute energy map using configured energy method."""
-        # Compute the energy table using the specified method
-        return self.method(image)
+        energy = self.method(image)
+        if not isinstance(energy, np.ndarray):
+            raise TypeError("Energy method must return a NumPy array.")
+        if energy.shape != image.shape[:2]:
+            raise ValueError(
+                f"Energy map must have shape {image.shape[:2]}; got {energy.shape}."
+            )
+        if not (
+            np.issubdtype(energy.dtype, np.integer)
+            or np.issubdtype(energy.dtype, np.floating)
+        ):
+            raise TypeError("Energy map must contain real numeric values.")
+
+        with np.errstate(over="ignore", invalid="ignore"):
+            energy = np.array(energy, dtype=np.float32, copy=True)
+        if not np.isfinite(energy).all():
+            raise ValueError("Energy map must contain only finite float32 values.")
+        return energy
 
     def _compute_costs(self, energy: np.ndarray) -> np.ndarray:
         """Compute cumulative cost table using dynamic programming."""
 
         # Initialize the costs table with the energy values
-        costs = energy.astype(np.float32, copy=True)
+        costs = energy.astype(np.float64, copy=True)
         height = energy.shape[0]
         # Iterate through each row to compute cumulative costs
         for i in range(1, height):
