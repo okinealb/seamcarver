@@ -1,19 +1,13 @@
-# Import necessary libraries
-import os
-import tempfile
-
 import numpy as np
 import pytest
+from PIL import Image
 
-# Import the project-specific packages
 from seamcarver.calculator import SeamCalculator
 from seamcarver.core import SeamCarver
 
 
 @pytest.fixture
 def sample_image():
-    """Create a sample image for testing."""
-    # Create a simple 3x3 RGB image with random colors
     return np.array(
         [
             [[255, 0, 0], [0, 255, 0], [0, 0, 255]],
@@ -26,22 +20,22 @@ def sample_image():
 
 @pytest.fixture
 def calculator():
-    """Create a SeamCalculator instance with a sample image."""
     return SeamCalculator()
 
 
 @pytest.fixture
 def carver(sample_image):
-    """Create a SeamCarver instance with a sample image."""
     return SeamCarver(sample_image)
 
 
 @pytest.fixture
-def temp_output():
-    """Provide temporary output file path."""
-    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
-        temp_path = f.name
-    yield temp_path
-    # Cleanup
-    if os.path.exists(temp_path):
-        os.unlink(temp_path)
+def cli_image_path(tmp_path):
+    image = np.arange(6 * 7 * 3, dtype=np.uint8).reshape(6, 7, 3)
+    path = tmp_path / "input.png"
+    Image.fromarray(image).save(path)
+    return str(path)
+
+
+@pytest.fixture
+def output_path(tmp_path):
+    return tmp_path / "output.png"

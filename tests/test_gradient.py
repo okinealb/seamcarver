@@ -1,47 +1,22 @@
-"""
-Unit tests for the GradientEnergy method.
-
-This module contains tests for the functionality of the GradientEnergy class,
-including energy map computation. It ensures that the gradient energy method
-behaves as expected when applied to sample images.
-
-Components Tested:
-- GradientEnergy class:
-  - Energy table calculation functionality.
-
-Dependencies:
-- numpy: Used to generate sample image data for testing.
-- GradientEnergy: The main class being tested.
-- Constants (BORDER_ENERGY): Used to define border energy values.
-"""
-
-# Import standard library packages
 import numpy as np
 
 from seamcarver.constants import BORDER_ENERGY
-
-# Import the project-specific packages
 from seamcarver.methods import GradientEnergy
 
 
-def test_energy_map(sample_image):
-    """Test the energy map computation."""
-    method = GradientEnergy()
-    energy_tbl = method(sample_image)
-    # Type and shape checks
-    assert energy_tbl.shape == sample_image.shape[:2]
-    assert np.issubdtype(energy_tbl.dtype, np.floating)
-    # Border energy checks
-    assert np.all(energy_tbl[:, 0] == BORDER_ENERGY)
-    assert np.all(energy_tbl[0, :] == BORDER_ENERGY)
-    assert np.all(energy_tbl[:, -1] == BORDER_ENERGY)
-    assert np.all(energy_tbl[-1, :] == BORDER_ENERGY)
-    # Internal energy checks
-    assert np.all(energy_tbl[1:-1, 1:-1] >= 0)
+def test_returns_expected_map(sample_image):
+    energy = GradientEnergy()(sample_image)
+
+    assert energy.shape == sample_image.shape[:2]
+    assert np.issubdtype(energy.dtype, np.floating)
+    assert np.all(energy[:, 0] == BORDER_ENERGY)
+    assert np.all(energy[0, :] == BORDER_ENERGY)
+    assert np.all(energy[:, -1] == BORDER_ENERGY)
+    assert np.all(energy[-1, :] == BORDER_ENERGY)
+    assert np.all(energy[1:-1, 1:-1] >= 0)
 
 
-def test_energy_map_avoids_uint8_overflow():
-    """Gradient arithmetic widens image bytes before subtraction and squaring."""
+def test_avoids_uint8_overflow():
     image = np.zeros((3, 3, 3), dtype=np.uint8)
     image[1, 2] = 240
 
