@@ -2,6 +2,7 @@
 Logging configuration for the seam carving project.
 """
 
+import copy
 import logging
 import sys
 
@@ -20,6 +21,7 @@ class ColoredFormatter(logging.Formatter):
 
     def format(self, record):
         if sys.stderr.isatty():  # Only colorize if terminal supports it
+            record = copy.copy(record)
             color = self.COLORS.get(record.levelname, "")
             record.levelname = f"{color}{record.levelname}{self.RESET}"
         return super().format(record)
@@ -30,7 +32,7 @@ def setup_cli_logging(
     quiet: bool = False,
     log_file: str | None = None,
     color: bool = True,
-) -> None:
+) -> logging.Logger:
     """Configure logging for CLI usage.
 
     Args:
@@ -39,10 +41,10 @@ def setup_cli_logging(
         log_file: Optional file to write detailed logs
         color: Use colored output (auto-detected for terminals)
     """
-    # Clear existing handlers
-    root_logger = logging.getLogger()
-    for handler in root_logger.handlers[:]:
-        root_logger.removeHandler(handler)
+    logger = logging.getLogger("seamcarver.cli")
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+        handler.close()
 
     # Determine level
     if quiet:
@@ -69,7 +71,7 @@ def setup_cli_logging(
 
     console_handler.setFormatter(formatter)
     console_handler.setLevel(console_level)
-    root_logger.addHandler(console_handler)
+    logger.addHandler(console_handler)
 
     # File handler (optional)
     if log_file:
@@ -79,24 +81,8 @@ def setup_cli_logging(
             logging.Formatter(file_format, datefmt="%Y-%m-%d %H:%M:%S")
         )
         file_handler.setLevel(logging.DEBUG)  # File gets everything
-        root_logger.addHandler(file_handler)
+        logger.addHandler(file_handler)
 
-    # Set root level
-    root_logger.setLevel(logging.DEBUG)
-
-
-def setup_library_logging(name: str) -> logging.Logger:
-    """Configure logging for library usage."""
-    logger = logging.getLogger(name)
-
-    # Libraries should NOT configure the root logger
-    # Add NullHandler to prevent "No handlers" warnings
-    if not logger.handlers:
-        logger.addHandler(logging.NullHandler())
-
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
     return logger
-
-
-def get_logger(name: str) -> logging.Logger:
-    """Get a logger instance."""
-    return logging.getLogger(name)

@@ -1,4 +1,9 @@
+import logging
+from io import StringIO
+from types import SimpleNamespace
+
 from seamcarver.cli import main
+from seamcarver.logger import ColoredFormatter, setup_cli_logging
 
 
 def test_verbose_includes_debug(capsys, cli_image_path, output_path):
@@ -65,3 +70,45 @@ def test_file_receives_messages(capsys, cli_image_path, output_path, tmp_path):
     assert output_path.exists()
     assert "Loading image" in contents
     assert "Output image saved successfully" in contents
+
+
+def test_setup_preserves_root_and_replaces_cli_handlers(tmp_path):
+    root_logger = logging.getLogger()
+    root_level = root_logger.level
+    root_stream = StringIO()
+    root_handler = logging.StreamHandler(root_stream)
+    root_logger.addHandler(root_handler)
+
+    try:
+        logger = setup_cli_logging(log_file=str(tmp_path / "first.log"), color=False)
+        old_handlers = logger.handlers[:]
+        old_file_handler = next(
+            handler
+            for handler in old_handlers
+            if isinstance(handler, logging.FileHandler)
+        )
+
+        logger = setup_cli_logging(color=False)
+        logger.warning("CLI message")
+
+        assert root_logger.level == root_level
+        assert root_handler in root_logger.handlers
+        assert root_stream.getvalue() == ""
+        assert len(logger.handlers) == 1
+        assert all(handler not in logger.handlers for handler in old_handlers)
+        assert old_file_handler.stream is None
+    finally:
+        root_logger.removeHandler(root_handler)
+
+
+def test_colored_formatter_does_not_mutate_record(monkeypatch):
+    fake_sys = SimpleNamespace(stderr=SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr("seamcarver.logger.sys", fake_sys)
+    record = logging.LogRecord(
+        "seamcarver.cli", logging.ERROR, "cli.py", 1, "failure", (), None
+    )
+
+    rendered = ColoredFormatter("%(levelname)s").format(record)
+
+    assert rendered == "\033[91mERROR\033[0m"
+    assert record.levelname == "ERROR"
