@@ -207,14 +207,22 @@ def test_resize_failure_restores_original_image(sample_image):
     assert np.array_equal(carver.image, original)
 
 
-def test_highlight_image_accepts_positional_arguments(carver):
-    """Highlight preserves its declared positional call form."""
+@pytest.mark.parametrize("direction", [VERTICAL, HORIZONTAL])
+def test_highlight_returns_independent_image(direction):
+    """Highlight returns a separate image without changing carver state."""
+    carver = SeamCarver(np.zeros((3, 4, 3), dtype=np.uint8))
     color = [1, 2, 3]
+    original = carver.image.copy()
+    expected_pixels = carver.shape[0] if direction == VERTICAL else carver.shape[1]
 
-    carver.highlight(VERTICAL, 1, color)
+    result = carver.highlight(direction, 1, color)
 
-    highlighted = np.all(carver.image == color, axis=-1)
-    assert highlighted.sum() == carver.shape[0]
+    assert result.shape == carver.shape
+    assert result.dtype == carver.image.dtype
+    assert np.all(result == color, axis=-1).sum() == expected_pixels
+    assert np.array_equal(carver.image, original)
+    assert result.flags.owndata
+    assert not np.shares_memory(result, carver.image)
 
 
 def test_vertical_seam_removal(carver):
