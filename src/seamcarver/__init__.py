@@ -39,8 +39,7 @@ Architecture:
     vertical-only operations for simplicity.
 """
 
-# Load metadata from the package
-import importlib.metadata
+from importlib.metadata import version as _distribution_version
 
 # Expose the seam calculator
 from .calculator import SeamCalculator
@@ -54,17 +53,7 @@ from .core import SeamCarver
 # Import the energy interface and implemented methods
 from .methods import EnergyMethod, GradientEnergy, LaplacianEnergy, SobelEnergy
 
-metadata = importlib.metadata.metadata("seamcarver")
-author_email = metadata["Author-email"]
-
-__version__ = metadata["Version"]
-__summary__ = metadata["Summary"]
-__license__ = metadata["License"]
-__author__ = author_email[: author_email.index("<") - 1]
-__email__ = author_email[author_email.index("<") :]
-__description__ = metadata["Description"]
-
-del metadata, author_email
+__version__ = _distribution_version("seamcarver")
 
 # Define the public API of this module
 __all__ = [

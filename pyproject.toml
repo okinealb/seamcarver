@@ -2,7 +2,7 @@
 
 # Build system requirements
 [build-system]
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 # Project metadata
@@ -10,8 +10,9 @@ build-backend = "setuptools.build_meta"
 name = "seamcarver"
 version = "0.5.1"
 description = "A command-line Python tool for image resizing using seam carving."
-authors = [{ name = "Albert Okine", email = "okinealb@grinnell.edu" }]
-license = { file = "LICENSE" }
+authors = [{ name = "Albert Kenneth" }]
+license = "MIT"
+license-files = ["LICENSE"]
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
 dependencies = [
@@ -29,8 +30,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     # Environment
     "Environment :: Console",
-    # License
-    "License :: OSI Approved :: MIT License",
     # OS Compatibility
     "Operating System :: OS Independent",
     # Programming Language

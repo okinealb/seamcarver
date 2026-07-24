@@ -10,7 +10,7 @@ Detailed engineering documentation is available in the [`docs/`](docs/) director
 
 - [Architecture Overview](docs/architecture.md)
 - [Design Decisions](docs/design-decisions.md)
-- [Optimization Notes](docs/optimization-notes.md)
+- [Optimization Notes](docs/optimization.md)
 - [Benchmark Methodology](docs/benchmarking.md)
 - [Algorithm Walkthrough](docs/algorithm-overview.md)
 
