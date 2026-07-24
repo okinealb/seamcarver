@@ -27,20 +27,24 @@ This document captures the major engineering decisions visible in the current im
   - Allows experimentation without changing seam search logic.
   - Supports research/benchmark use cases with interchangeable models.
 - Tradeoff:
-  - Energy methods must obey implicit assumptions (2D map shape, vertical orientation expectation in docs), but these are not strongly runtime-validated (`seamcarver/methods/interface.py:29-30`, `42-43`).
+  - The calculator validates each result and copies it to `float32`. This adds
+    one full-map validation pass but keeps plugin errors out of the seam search.
 
-## 3. Vertical-only seam logic + transpose abstraction
+## 3. Vertical-only seam logic with local orientation
 
-**Decision:** Implement only vertical seam algorithm and adapt horizontal operations by transposing image state.
+**Decision:** Implement only the vertical seam algorithm and adapt horizontal
+operations through a local transposed view.
 
 - Evidence:
-  - `transpose_if_horizontal` decorator (`seamcarver/core.py:21-31`).
+  - `_orient_image` normalizes an operation's local image view
+    (`src/seamcarver/core.py`).
   - Comments explicitly stating downstream components assume vertical orientation (`seamcarver/core.py:45-50`; similar notes in `seamcarver/calculator.py:47-49`, `seamcarver/methods/interface.py:29-30`).
 - Rationale:
   - Eliminates duplicate horizontal DP/backtracking implementations.
   - Centralizes direction handling in one place.
 - Tradeoff:
-  - Decorator mutates and restores `self.image`, which is elegant but stateful; debugging around failures inside wrapped methods can be more subtle.
+  - Callers must convert completed horizontal results back to the stored
+    orientation. Temporary orientation is not written to `self.image`.
 
 ## 4. NumPy-first implementation choices
 

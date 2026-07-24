@@ -63,13 +63,16 @@ provide constants and logging.
 
 - Encapsulates seam-search computation and is callable (`__call__`) for a requested seam count (`seamcarver/calculator.py:77-83`).
 - Uses configured `EnergyMethod` for energy map computation (`seamcarver/calculator.py:179-183`).
-- Builds cumulative cost table with row-wise DP transitions (`seamcarver/calculator.py:185-201`).
+- Builds a `float64` cumulative cost table with row-wise DP transitions. Energy
+  maps remain `float32`; the wider accumulator prevents path-cost overflow.
 - Backtracks minimum seams from the final row and invalidates chosen seam pixels with `np.inf` to support repeated extraction (`seamcarver/calculator.py:204-239`).
 - Returns seam positions as a boolean mask in the original image coordinate space (`seamcarver/calculator.py:106-127`).
 
 ### 2.3 `EnergyMethod` and implementations
 
 - `EnergyMethod` defines the pluggable contract: `__call__(image) -> energy_map` (`seamcarver/methods/interface.py:33-50`).
+- The calculator requires a real numeric NumPy array matching the image height
+  and width. It rejects nonfinite values and owns the normalized `float32` copy.
 - `GradientEnergy` computes gradient-magnitude-like interior energy with fixed border energy (`seamcarver/methods/gradient.py:23-31`, `seamcarver/constants.py:14-15`).
 - `SobelEnergy` and `LaplacianEnergy` convert to grayscale then apply SciPy operators (`seamcarver/methods/sobel.py:25-30`, `seamcarver/methods/laplacian.py:25-29`).
 
@@ -86,7 +89,8 @@ provide constants and logging.
    only after seam processing succeeds (`src/seamcarver/core.py`, `_orient_image`).
 
 4. **Energy map generation**  
-   `SeamCalculator` calls the configured energy method and receives a 2D energy table (`seamcarver/calculator.py:179-183`).
+   `SeamCalculator` validates the configured method's result and copies it to a
+   finite `float32` energy table.
 
 5. **Seam extraction loop**  
    For each seam: compute costs, backtrack minimum path, mark path in seam mask, invalidate energy values (`seamcarver/calculator.py:143-150`, `204-239`).
@@ -109,6 +113,8 @@ provide constants and logging.
 - `resize` validates both dimensions, then performs only the required directional
   removals. Equal dimensions are no-ops; larger dimensions are rejected.
 - `SeamCalculator.__call__` iterates until requested seams are processed, using `_process` to extract as many seams as possible before image compaction (`seamcarver/calculator.py:112-122`, `129-155`).
+- Each extraction batch must find at least one seam. Zero progress raises
+  `RuntimeError`.
 
 ## 5. Extensibility boundaries
 

@@ -28,6 +28,8 @@ after processing succeeds (`src/seamcarver/core.py`, `_orient_image`).
 ## 4. Energy-map generation
 
 `SeamCalculator` delegates energy computation to an injected `EnergyMethod` strategy (`seamcarver/calculator.py:67-75`, `179-183`, `seamcarver/methods/interface.py:13-35`).
+It validates the returned shape, dtype, and values, then copies the map to
+`float32` before seam extraction.
 
 Built-in energy methods:
 
@@ -39,7 +41,8 @@ Built-in energy methods:
 
 For each candidate seam, cumulative minimum costs are computed row-by-row:
 
-- Initialize `costs` from `energy` (`seamcarver/calculator.py:188-190`)
+- Initialize a `float64` cost table from the `float32` energy map so path
+  accumulation remains finite (`src/seamcarver/calculator.py`, `_compute_costs`)
 - For each row, add the minimum reachable predecessor from the previous row (`seamcarver/calculator.py:192-199`)
   - interior: min of left-up, up, right-up
   - boundaries: min of valid neighbors
@@ -63,7 +66,9 @@ For a call requesting `num_seams`:
 1. The image is copied, and an index map (`kept`) is initialized (`seamcarver/calculator.py:101-107`).
 2. `_process` repeatedly computes one seam at a time from the current energy state until successful count reaches target or exhaustion (`seamcarver/calculator.py:129-155`).
 3. Found seams are removed from the working image via boolean mask reshape (`seamcarver/calculator.py:118-122`).
-4. Final seam coordinates are reconstructed in original image space by inverting the kept-mask (`seamcarver/calculator.py:123-127`).
+4. A batch that finds no seam raises `RuntimeError` instead of repeating without
+   progress.
+5. Final seam coordinates are reconstructed in original image space by inverting the kept-mask (`seamcarver/calculator.py:123-127`).
 
 ## 8. Applying seams to user operations
 
