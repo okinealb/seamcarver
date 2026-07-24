@@ -1,7 +1,6 @@
 # Include essentials
 include README.md
 include LICENSE
-include requirements.txt
 
 # Include examples
 recursive-include examples *.jpg *.png *.jpeg
