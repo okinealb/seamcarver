@@ -1,4 +1,5 @@
 include benchmarks/*.py
+include src/seamcarver/py.typed
 include docs/algorithm-overview.md
 include docs/architecture.md
 include docs/benchmarking.md
