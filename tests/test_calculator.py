@@ -19,6 +19,8 @@ Dependencies:
 """
 
 # Import standard library packages
+from itertools import product
+
 import numpy as np
 import pytest
 
@@ -35,6 +37,17 @@ class FixedEnergy(EnergyMethod):
 
     def __call__(self, image):
         return self.output
+
+
+def minimum_seam_cost(energy):
+    """Return the minimum connected top-to-bottom path cost."""
+    height, width = energy.shape
+    paths = product(range(width), repeat=height)
+    return min(
+        sum(energy[row, column] for row, column in enumerate(path))
+        for path in paths
+        if all(abs(left - right) <= 1 for left, right in zip(path, path[1:]))
+    )
 
 
 def test_initialization(calculator):
@@ -58,6 +71,55 @@ def test_call_accepts_numpy_integer(calculator, sample_image):
     mask = calculator(sample_image, np.int64(1))
 
     assert mask.sum() == sample_image.shape[0]
+
+
+@pytest.mark.parametrize(
+    ("shape", "num_seams"),
+    [
+        ((1, 2), 1),
+        ((2, 2), 1),
+        ((3, 4), 2),
+        ((4, 5), 3),
+    ],
+)
+def test_seam_mask_consistency(shape, num_seams):
+    """Seam masks preserve shape, count, and connectivity."""
+    height, width = shape
+    image = np.zeros((*shape, 3), dtype=np.uint8)
+
+    mask = SeamCalculator()(image, num_seams)
+
+    assert mask.shape == shape
+    assert mask.dtype == np.bool_
+    assert np.all(mask.sum(axis=1) == num_seams)
+    assert mask.sum() == num_seams * height
+
+    if num_seams == 1:
+        columns = np.argmax(mask, axis=1)
+        assert np.all(np.abs(np.diff(columns)) <= 1)
+
+
+@pytest.mark.parametrize(
+    "energy",
+    [
+        np.array([[4, 1, 3]]),
+        np.array([[3, 1], [1, 3]]),
+        np.array(
+            [
+                [5, 1, 4, 3],
+                [2, 6, 1, 7],
+                [4, 2, 3, 1],
+            ]
+        ),
+    ],
+)
+def test_single_seam_has_minimum_cost(energy):
+    """Single-seam search matches a brute-force minimum."""
+    image = np.zeros((*energy.shape, 3), dtype=np.uint8)
+
+    mask = SeamCalculator(FixedEnergy(energy))(image, 1)
+
+    assert energy[mask].sum() == minimum_seam_cost(energy)
 
 
 def test_mask_to_index_returns_flat_indices(calculator):
