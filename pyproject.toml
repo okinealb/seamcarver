@@ -74,29 +74,18 @@ exclude = ["tests*", "test*", "build*", "dist*", "*.egg-info*"]
 
 # Pytest configuration 
 [tool.pytest.ini_options]
-testpaths = ["tests", "benchmarks"]
+testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = [
     "--strict-config",
-    "--benchmark-columns=min,max,mean,stddev,median,ops",
+    "--benchmark-columns=mean,median,stddev,rounds",
     "--benchmark-sort=mean",
-    "--benchmark-group-by=group",
+    "--benchmark-group-by=param:num_seams",
+    "--benchmark-name=short",
 ]
 console_output_style = "progress"
-
-# Configuration for pytest-benchmark
-[tool.pytest_benchmark]
-min_rounds = 5
-max_time = 10
-timer = "time.perf_counter"
-calibration_precision = 10
-warmup = true
-warmup_iterations = 100
-disable_gc = true
-sort = "mean"
-group_by = "name"
 
 [tool.pytest_cov]
 omit = [
