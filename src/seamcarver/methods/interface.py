@@ -38,11 +38,12 @@ class EnergyMethod(ABC):
 
         Args:
             image: Input image as 3D numpy array (height, width, channels).
-                Expected to be in RGB format with values 0-255 or 0-1.
+                Expected to be an RGB uint8 array.
 
         Returns:
-            Energy map as 2D numpy array (height, width) where higher
-            values indicate more important pixels that should be preserved.
+            A real numeric NumPy array matching the image height and width.
+            Values must remain finite when converted to float32. Higher values
+            indicate pixels that should be preserved.
 
         Examples:
             >>> method = GradientEnergy()

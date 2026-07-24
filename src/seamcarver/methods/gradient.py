@@ -28,6 +28,7 @@ class GradientEnergy(EnergyMethod):
         # Initialize the energy table with border values
         energy_tbl = np.full(image.shape[:2], BORDER_ENERGY, dtype=np.float32)
         # Calculate gradients, then combine them for total energy
+        image = image.astype(np.float32, copy=False)
         dx = image[1:-1, 2:] - image[1:-1, :-2]
         dy = image[2:, 1:-1] - image[:-2, 1:-1]
         energy_tbl[1:-1, 1:-1] = np.sqrt(
