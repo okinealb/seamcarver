@@ -41,8 +41,11 @@ Supporting modules provide constants and logging (`seamcarver/constants.py:10-17
 
 ### 2.1 `SeamCarver`
 
-- Accepts multiple image input forms: ndarray, nested list, PIL image, and file path (`seamcarver/core.py:95-104`).
-- Normalizes image representation to RGB `numpy` arrays.
+- Accepts ndarray, nested-list, PIL image, string-path, and `os.PathLike` inputs
+  (`src/seamcarver/_image.py`, `normalize_image`).
+- Owns an RGB `uint8` NumPy array shaped `(height, width, 3)`. NumPy inputs must
+  already satisfy that contract. Integer lists are validated before conversion;
+  PIL images and file inputs are converted to RGB.
 - Exposes public image operations:
   - `resize(height, width)` removes vertical then horizontal seams (`seamcarver/core.py:125-135`).
   - `remove(direction, num_seams)` removes seam pixels using returned mask (`seamcarver/core.py:136-149`).
