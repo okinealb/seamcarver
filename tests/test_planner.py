@@ -14,9 +14,9 @@ def test_tracks_source_coordinates_across_batches():
         columns = np.arange(current.shape[1], dtype=np.float32)
         return np.broadcast_to(columns, current.shape[:2]).copy()
 
-    mask = find_seams(image, 10, column_energy)
+    mask = find_seams(image, 10, column_energy, batch_size=4)
 
-    assert widths == [100, 92]
+    assert widths == [100, 96, 92]
     assert np.array_equal(np.flatnonzero(mask[0]), np.arange(10))
     assert np.all(mask.sum(axis=1) == 10)
     assert np.array_equal(image, original)

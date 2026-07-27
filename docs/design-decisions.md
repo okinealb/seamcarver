@@ -72,27 +72,38 @@ operations through a local transposed view.
 - Tradeoff:
   - CLI currently prioritizes operational simplicity over full configurability (e.g., no argument for selecting energy method; default constructor path uses `GradientEnergy`) (`seamcarver/cli.py:93`, `seamcarver/core.py:64-65`).
 
-## 6. Multi-seam extraction approach and implicit performance intent
+## 6. Recompute energy after every seam
 
-**Decision:** In seam extraction loops, keep one energy table for a processing round and invalidate selected seam pixels with `np.inf` to continue selecting additional seams.
+**Decision:** Public operations recompute the energy map after each seam removal.
+The result therefore matches repeated one-seam calls.
 
-- Evidence:
-  - `_process` computes energy once (`seamcarver/calculator.py:138-140`).
-  - Each seam recomputes costs/backtracks and sets selected energy cells to `np.inf` (`seamcarver/calculator.py:146-150`, `219`, `235`).
-- Likely rationale (implicit):
-  - Reduce repeated energy recomputation overhead during multi-seam requests.
+- Rationale:
+  - Removal changes pixel neighborhoods and may change their energy.
+  - A hidden width-based batch heuristic made output depend on an undocumented
+    performance policy.
 - Tradeoff:
-  - Faster than fully recomputing energy after every removal, but can diverge from a strict “recompute-after-each-removal” interpretation.
+  - Batching reduces energy recomputation, but exploratory comparisons showed
+    that it often selects different pixels.
+  - Its performance benefit needs reproducible benchmark coverage before it can
+    support a public speed claim.
 
-## 7. Batch-size heuristic present but not currently integrated
+## 7. Keep batching private
 
-**Observation/decision state:** The class defines width-to-batch mappings and computes `batch_size`, but current control flow does not use that value to constrain extraction loops.
+**Decision:** The planner retains an explicit private batch-size parameter for
+measurement. The calculator does not expose it or select a batch size
+automatically.
 
-- Evidence:
-  - Heuristic table and helper (`seamcarver/calculator.py:52-58`, `170-176`).
-  - Computed in `__call__` (`seamcarver/calculator.py:108-110`) without downstream use.
-- Interpretation:
-  - Suggests an optimization path that is incomplete, deferred, or retained from a prior implementation iteration.
+- Rationale:
+  - This preserves the measured optimization without making an approximate mode
+    part of the public contract.
+- Revisit when:
+  - A demonstrated use case justifies an explicit fast mode with documented
+    output and quality expectations.
+- Compatibility:
+  - `SeamCalculator.MAP_DIMS_TO_SIZE` was removed without replacement because
+    automatic batching is no longer supported.
+  - The intended distribution remains unreleased. A version change will be
+    chosen during release preparation rather than for this internal beta change.
 
 ## 8. Error handling and user feedback
 

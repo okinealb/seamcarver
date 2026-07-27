@@ -90,8 +90,8 @@ class TestSeamCalculation:
 
         assert np.array_equal(sample_image, original)
 
-    def test_preserves_batch_size_configuration(self):
-        image = np.zeros((2, 6, 3), dtype=np.uint8)
+    def test_recomputes_energy_after_each_seam(self):
+        image = np.zeros((2, 100, 3), dtype=np.uint8)
         widths = []
 
         def column_energy(current):
@@ -100,8 +100,24 @@ class TestSeamCalculation:
             return np.broadcast_to(columns, current.shape[:2]).copy()
 
         calculator = SeamCalculator(column_energy)
-        calculator.MAP_DIMS_TO_SIZE = [(0, 50.0)]
+        calculator(image, 10)
 
-        calculator(image, 4)
+        assert widths == list(range(100, 90, -1))
 
-        assert widths == [6, 3]
+    def test_multi_seam_result_matches_repeated_single_removal(self, calculator):
+        image = np.random.default_rng(1).integers(
+            0,
+            256,
+            (16, 64, 3),
+            dtype=np.uint8,
+        )
+
+        mask = calculator(image, 10)
+        combined = image[~mask].reshape(16, 54, 3)
+
+        repeated = image.copy()
+        for _ in range(10):
+            mask = calculator(repeated, 1)
+            repeated = repeated[~mask].reshape(16, -1, 3)
+
+        assert np.array_equal(combined, repeated)

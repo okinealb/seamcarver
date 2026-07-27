@@ -45,14 +45,6 @@ class SeamCalculator:
         transpose the image before passing to the calculator.
     """
 
-    MAP_DIMS_TO_SIZE: list[tuple[int, float]] = [
-        (1000, 12.5),
-        (500, 10.0),
-        (100, 8.33),
-        (20, 6.67),
-        (0, 5.0),
-    ]
-
     # Class attributes
     method: EnergyMethod
     """EnergyMethod: method to calculate the energy of the image."""
@@ -95,7 +87,6 @@ class SeamCalculator:
             image,
             num_seams,
             self._compute_energy,
-            self.MAP_DIMS_TO_SIZE,
         )
 
     def mask_to_index(
