@@ -112,9 +112,10 @@ provide constants and logging.
   (`seamcarver/cli.py:99-121`)
 - `resize` validates both dimensions, then performs only the required directional
   removals. Equal dimensions are no-ops; larger dimensions are rejected.
-- `SeamCalculator.__call__` iterates until requested seams are processed, using `_process` to extract as many seams as possible before image compaction (`seamcarver/calculator.py:112-122`, `129-155`).
-- Each extraction batch must find at least one seam. Zero progress raises
-  `RuntimeError`.
+- `SeamCalculator.__call__` delegates repeated removal to the private planner.
+- The planner recomputes energy after every removal and maps each seam back to
+  the source image.
+- A failed extraction raises instead of returning a partial mask.
 
 ## 5. Extensibility boundaries
 

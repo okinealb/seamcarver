@@ -31,7 +31,8 @@ Seam carving finds connected pixel paths with minimal cumulative energy and remo
 - A reusable Python library (`SeamCarver`) for integration into scripts and applications
 - A CLI (`seamcarver`) for direct image processing workflows
 - Extensible energy-method abstractions for algorithm experimentation
-- A dynamic-programming seam computation pipeline with batch seam handling
+- A dynamic-programming seam computation pipeline that recalculates energy after
+  each removal
 
 ## Features
 
@@ -43,7 +44,7 @@ Seam carving finds connected pixel paths with minimal cumulative energy and remo
   - `SobelEnergy`
   - `LaplacianEnergy`
 - Dynamic-programming cumulative-cost computation and seam backtracking
-- Batch seam extraction and mask-based seam removal
+- Iterative seam extraction and mask-based seam removal
 - CLI logging controls: `--verbose`, `--quiet`, `--log-file`
 - Python API and packaged distribution via `pyproject.toml`
 
@@ -139,9 +140,8 @@ Current implementation includes several practical optimizations:
 
 - Vectorized cumulative-cost updates in DP row transitions
 - Transpose-based abstraction to unify horizontal/vertical seam logic
-- In-place seam invalidation (`np.inf`) during multi-seam extraction
 - Boolean-mask reshape strategy for seam removal
-- Adaptive seam batch sizing logic based on image width
+- Source-coordinate tracking across repeated seam removals
 
 ## Development
 

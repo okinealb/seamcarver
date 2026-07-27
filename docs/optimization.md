@@ -11,19 +11,24 @@ This document outlines the performance-conscious decisions taken in the seamcarv
 
 - Rather than duplicating logic for horizontal and vertical seams, a transpose-based abstraction is used. This leverages NumPy's fast memory operations: for any direction, the same removal algorithm is applied, and the image/energy arrays are transposed as needed.
 
-## In-Place Seam Invalidation
+## Iterative Energy Recalculation
 
-- During multi-seam extraction, seam locations are invalidated in-place by setting their positions to `np.inf` (or otherwise marking them), avoiding the need to recompute the full energy table or create new masks for every seam.
-- Boolean masks are used for seam removal, reshaped as necessary to efficiently remove entire seams from the NP arrays without unnecessary copying.
+- The default algorithm recalculates energy after each seam removal because the
+  removal changes neighboring pixels.
+- Boolean masks remove seams, while a flat source-index map reconstructs their
+  positions in the original image.
 
-## Adaptive Batching
+## Experimental Batching
 
-- For very large images or when many seams are extracted, an adaptive batch sizing logic is applied: a fixed proportion of the image width may be targeted in a single operation before the energy table is rebuilt.
-- This approach sacrifices some per-seam optimality for a substantial win in speed, as full energy recomputation is rate-limiting.
+- The private planner can reuse an energy map for more than one seam during
+  controlled measurements.
+- Batching is not selected automatically or exposed by the public API because it
+  changes which pixels are removed.
 
 ## Profiling and Bottlenecks
 
-- Energy map computation remains the largest time sink, as it requires per-pixel calculations across the full image. Batch extraction and mask-based removals streamline the remainder of the operation.
+- Repeated energy computation, dynamic programming, and image compaction account
+  for the cost of multi-seam removal.
 - Memory allocations are minimized where possible, but clarity is generally prioritized over low-level buffer reuse.
 - Further speed improvements are possible by exploring in-place modifications and buffer pre-allocation, but have not yet been prioritized for clarity and maintainability.
 
@@ -33,10 +38,11 @@ This document outlines the performance-conscious decisions taken in the seamcarv
 
 ## Opportunities for Future Optimization
 
-- Forward-energy seam carving, GPU acceleration (with CuPy or numba), or block-wise parallelism could yield further gains, especially for batch or high-resolution workloads.
+- Forward-energy seam carving, GPU acceleration, or block-wise parallelism could
+  be evaluated for high-resolution workloads.
 - Advanced memory management or buffering strategies could reduce garbage generation and further optimize runtime memory locality.
 - For now, the goal is to keep the code clean and transparent: any further optimizations will be implemented only when real-world bottlenecks appear in practical use cases.
 
-## Summary
-
-I consciously favor readable, well-structured NumPy code over micro-optimized or highly specialized code. The key performance win comes from batch processing and vectorization, which provides “good enough” speed on commodity hardware for typical use cases.
+Correctness remains the default. Performance changes require same-machine
+measurements and must preserve the documented result contract unless an
+alternative mode states otherwise.

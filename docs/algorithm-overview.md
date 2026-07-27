@@ -56,19 +56,21 @@ Backtracking starts from the minimum-cost pixel in the last row and walks upward
 During backtracking:
 
 - seam pixels are marked in a boolean mask (`seamcarver/calculator.py:208`, `218`, `234`)
-- selected pixels are invalidated in `energy` by setting them to `np.inf` (`seamcarver/calculator.py:219`, `235`)
-- if no valid finite path exists, `SeamExhausedException` is raised (`seamcarver/calculator.py:214-216`, `230-232`)
+- if no valid finite path exists, `SeamNotFoundError` is raised
 
 ## 7. Multi-seam extraction flow
 
 For a call requesting `num_seams`:
 
-1. The image is copied, and an index map (`kept`) is initialized (`seamcarver/calculator.py:101-107`).
-2. `_process` repeatedly computes one seam at a time from the current energy state until successful count reaches target or exhaustion (`seamcarver/calculator.py:129-155`).
-3. Found seams are removed from the working image via boolean mask reshape (`seamcarver/calculator.py:118-122`).
-4. A batch that finds no seam raises `RuntimeError` instead of repeating without
-   progress.
-5. Final seam coordinates are reconstructed in original image space by inverting the kept-mask (`seamcarver/calculator.py:123-127`).
+1. The planner copies the image and initializes a source-index map.
+2. It computes energy for the current image and finds one seam.
+3. It removes that seam from both the image and index map.
+4. It repeats energy computation and removal until it reaches the requested count.
+5. It reconstructs the final mask in the source image's coordinates.
+
+The planner retains a private batch-size parameter for performance experiments.
+Public operations use a batch size of one so their results match repeated
+single-seam removal.
 
 ## 8. Applying seams to user operations
 
@@ -87,4 +89,5 @@ For one seam on an image of height `H` and width `W`:
 - cumulative costs: `O(HW)` (`seamcarver/calculator.py:192-199`)
 - backtracking: `O(H)` (`seamcarver/calculator.py:223-239`)
 
-For `k` seams, cost scales roughly with repeated seam extraction and periodic image compaction (`seamcarver/calculator.py:112-122`, `143-150`).
+For `k` seams, the default behavior repeats energy computation, seam search, and
+image compaction `k` times.

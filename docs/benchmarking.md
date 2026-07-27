@@ -7,14 +7,15 @@ outside the timed section.
 Each case uses an RGB `uint8` array generated with NumPy seed `42` and the
 default `GradientEnergy` method. The suite covers square images with widths of
 512, 1024, and 2048 pixels. A one-seam case records the fixed-cost baseline;
-the remaining cases remove 5, 50, and 500 seams, forming a 10x progression.
+the remaining cases remove 5, 50, and 200 seams to cover small, medium, and
+heavy removals.
 A fresh `SeamCarver` is created before every round because removal mutates the
 carver. Each case runs one warmup round followed by five measured rounds.
 
 Results are grouped by seam count so each table compares the three image sizes
-at the same removal count. Removing 500 seams from the 512-pixel image leaves
-12 columns, making that case a near-exhaustion stress workload rather than a
-linear scaling comparison.
+at the same removal count. Removing 200 seams from the 512-pixel image reduces
+its width by about 39 percent without turning the case into a near-exhaustion
+stress workload.
 
 The current suite measures vertical removal only. Horizontal removal and mixed
 vertical-horizontal resizing remain separate future benchmark additions.
