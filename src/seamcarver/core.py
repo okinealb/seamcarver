@@ -8,6 +8,7 @@ For more information on seam carving, refer to the
 [Wikipedia article](https://en.wikipedia.org/wiki/Seam_carving).
 """
 
+from collections.abc import Sequence
 from typing import SupportsIndex
 
 import numpy as np
@@ -18,11 +19,12 @@ from PIL import Image
 
 # Import project-specific packages
 from ._image import ImageInput, normalize_image
-from ._plan import build_plan
-from ._validation import validate_direction, validate_resize_target
+from ._plan import ResizePlan, build_plan
+from ._validation import validate_color, validate_direction, validate_resize_target
 from .calculator import SeamCalculator
 from .constants import HIGHLIGHT_COLOR, HORIZONTAL, VERTICAL
-from .methods import EnergyMethod, GradientEnergy
+from .methods import GradientEnergy
+from .methods.interface import EnergyCallable
 
 
 def _orient_image(
@@ -32,6 +34,56 @@ def _orient_image(
     if direction == HORIZONTAL:
         return np.transpose(image, (1, 0, 2))
     return image
+
+
+def plan(
+    image: ImageInput,
+    *,
+    height: SupportsIndex,
+    width: SupportsIndex,
+    method: EnergyCallable = GradientEnergy(),
+) -> ResizePlan:
+    """Compute a reusable width-first resize plan.
+
+    Args:
+        image: Supported image input converted to an owned RGB uint8 array.
+        height: Positive target height no larger than the source height.
+        width: Positive target width no larger than the source width.
+        method: Callable that computes an energy map for an RGB uint8 array.
+
+    Returns:
+        A plan that can render the carved result or highlight removed pixels
+        without repeating seam search.
+    """
+    normalized = normalize_image(image)
+    height = validate_resize_target("height", height, normalized.shape[0])
+    width = validate_resize_target("width", width, normalized.shape[1])
+    return build_plan(
+        normalized,
+        height=height,
+        width=width,
+        calculator=SeamCalculator(method),
+    )
+
+
+def resize(
+    image: ImageInput,
+    *,
+    height: SupportsIndex,
+    width: SupportsIndex,
+    method: EnergyCallable = GradientEnergy(),
+) -> npt.NDArray[np.uint8]:
+    """Return an owned RGB uint8 image resized width-first.
+
+    The source input is not mutated. Target dimensions must be positive and no
+    larger than the source because seam addition is not implemented.
+    """
+    return plan(
+        image,
+        height=height,
+        width=width,
+        method=method,
+    ).carve()
 
 
 # Main class for seam carving operations
@@ -63,7 +115,7 @@ class SeamCarver:
     def __init__(
         self,
         image: ImageInput,
-        method: EnergyMethod = GradientEnergy(),
+        method: EnergyCallable = GradientEnergy(),
         verbose: bool = False,
     ) -> None:
         """Initialize the SeamCarver with an image and configuration.
@@ -74,7 +126,7 @@ class SeamCarver:
                 - list: Rectangular RGB integer data with values from 0 to 255
                 - Image.Image: PIL image converted to RGB
                 - str or os.PathLike: Path to an image converted to RGB
-            method (EnergyMethod): Energy calculation method for seam detection.
+            method: Callable used to calculate image energy.
                 Defaults to GradientEnergy().
             verbose (bool): Enable verbose output during operations.
                 Defaults to False.
@@ -147,10 +199,11 @@ class SeamCarver:
         self,
         direction: SupportsIndex = VERTICAL,
         num_seams: SupportsIndex = 1,
-        color: list[int] = HIGHLIGHT_COLOR,
+        color: Sequence[SupportsIndex] = HIGHLIGHT_COLOR,
     ) -> npt.NDArray[np.uint8]:
         """Return an independent image with the requested seams highlighted."""
         direction = validate_direction(direction)
+        color = validate_color(color)
         oriented_image = _orient_image(self.image, direction)
         mask = self.calculator(oriented_image, num_seams)
         if direction == HORIZONTAL:

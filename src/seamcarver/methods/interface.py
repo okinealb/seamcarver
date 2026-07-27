@@ -8,9 +8,16 @@ calculation strategies in seam carving algorithms.
 
 # Import standard library packages
 from abc import ABC, abstractmethod
+from collections.abc import Callable
+from typing import TypeAlias
 
 import numpy as np
 import numpy.typing as npt
+
+EnergyCallable: TypeAlias = Callable[
+    [npt.NDArray[np.uint8]],
+    npt.NDArray[np.generic],
+]
 
 
 class EnergyMethod(ABC):
