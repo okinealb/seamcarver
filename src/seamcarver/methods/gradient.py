@@ -11,10 +11,10 @@ For more information, see the [Wikipedia article](https://en.wikipedia.org/wiki/
 import numpy as np
 import numpy.typing as npt
 
-from ..constants import BORDER_ENERGY
-
 # Import project-specific packages
 from .interface import EnergyMethod
+
+_BORDER_ENERGY = 1000
 
 
 class GradientEnergy(EnergyMethod):
@@ -27,7 +27,7 @@ class GradientEnergy(EnergyMethod):
     def __call__(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.float32]:
         """Compute the energy map of the image using image gradients."""
         # Initialize the energy table with border values
-        energy_tbl = np.full(image.shape[:2], BORDER_ENERGY, dtype=np.float32)
+        energy_tbl = np.full(image.shape[:2], _BORDER_ENERGY, dtype=np.float32)
         # Calculate gradients, then combine them for total energy
         image = image.astype(np.float32, copy=False)
         dx = image[1:-1, 2:] - image[1:-1, :-2]

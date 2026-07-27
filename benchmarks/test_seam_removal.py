@@ -1,16 +1,19 @@
 import numpy as np
 import pytest
 
-from seamcarver import VERTICAL, SeamCarver
+from seamcarver import resize
 
 SEED = 42
 IMAGE_SIZES = (512, 1024, 2048)
 SEAM_COUNTS = (1, 5, 50, 200)
 
 
-def _remove_vertical_seams(carver, num_seams):
-    carver.remove(VERTICAL, num_seams)
-    return carver.image
+def _remove_vertical_seams(image, num_seams):
+    return resize(
+        image,
+        height=image.shape[0],
+        width=image.shape[1] - num_seams,
+    )
 
 
 @pytest.mark.parametrize("size", IMAGE_SIZES, ids=lambda size: f"{size}x{size}")
@@ -27,9 +30,6 @@ def test_vertical_seam_removal(benchmark, size, num_seams):
         dtype=np.uint8,
     )
 
-    def setup():
-        return (SeamCarver(image), num_seams), {}
-
     benchmark.extra_info.update(
         {
             "direction": "vertical",
@@ -41,7 +41,7 @@ def test_vertical_seam_removal(benchmark, size, num_seams):
     )
     result = benchmark.pedantic(
         _remove_vertical_seams,
-        setup=setup,
+        args=(image, num_seams),
         rounds=5,
         warmup_rounds=1,
     )

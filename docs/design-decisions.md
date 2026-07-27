@@ -1,131 +1,124 @@
-# Design Decisions and Tradeoffs
+# Design decisions and tradeoffs
 
-This document captures the major engineering decisions visible in the current implementation, why they were likely made, and tradeoffs.
+## 1. Functional public operations
 
-## 1. Split public operations from seam computation
+**Decision:** Use `resize()` for ordinary transformations and `plan()` when one
+set of seam decisions must produce both a result and a preview.
 
-**Decision:** Use `resize()` and `plan()` for ordinary user operations and
-`SeamCalculator` for algorithmic seam extraction. Retain `SeamCarver` during
-the beta migration.
+The earlier mutable `SeamCarver` class was retained while these operations were
+introduced, then removed during beta. It did not cache energy maps or seam
+decisions, so it offered no computational advantage over the functional API.
 
-- Evidence:
-  - `resize()` returns an owned transformed image.
-  - `plan()` returns reusable seam decisions for carving and highlighting.
-  - `SeamCalculator` validates energy maps and delegates seam planning.
-- Rationale:
-  - An input-to-output function avoids partial mutable state.
-  - A plan prevents duplicate seam search when callers need both outputs.
-- Tradeoff:
-  - `ResizePlan` retains source, result, and mask arrays.
+Benefits:
 
-## 2. Strategy interface for energy methods
+- Source inputs are not mutated.
+- A failed operation cannot leave a public object partially updated.
+- Explicit input and output values are easier to test, retry, and pass to a
+  background worker.
 
-**Decision:** Accept any compatible energy callable while retaining the
-`EnergyMethod` abstract base class.
+Tradeoff:
 
-- Evidence:
-  - Interface contract (`seamcarver/methods/interface.py:13-35`).
-  - Default and injected usage in both `SeamCarver` and `SeamCalculator` (`seamcarver/core.py:64`, `seamcarver/calculator.py:67`).
-  - Built-ins: `GradientEnergy`, `SobelEnergy`, `LaplacianEnergy` (`seamcarver/methods/__init__.py:30-39`).
-- Rationale:
-  - Allows experimentation without changing seam search logic.
-  - Plain functions and callable objects do not need explicit inheritance.
-- Tradeoff:
-  - The calculator validates each result and copies it to `float32`. This adds
-    one full-map validation pass but keeps plugin errors out of the seam search.
+- Callers performing several transformations must reassign each result.
 
-## 3. Vertical-only seam logic with local orientation
+## 2. One stateful result type
 
-**Decision:** Implement only the vertical seam algorithm and adapt horizontal
-operations through a local transposed view.
+**Decision:** Keep `ResizePlan` as the only stateful public image-operation
+object.
 
-- Evidence:
-  - `_orient_image` normalizes an operation's local image view
-    (`src/seamcarver/core.py`).
-  - Comments explicitly stating downstream components assume vertical orientation (`seamcarver/core.py:45-50`; similar notes in `seamcarver/calculator.py:47-49`, `seamcarver/methods/interface.py:29-30`).
-- Rationale:
-  - Eliminates duplicate horizontal DP/backtracking implementations.
-  - Centralizes direction handling in one place.
-- Tradeoff:
-  - Callers must convert completed horizontal results back to the stored
-    orientation. Temporary orientation is not written to `self.image`.
+A plan stores the source, carved result, and source-coordinate removal mask.
+This avoids repeating seam search when a caller needs both `carve()` and
+`highlight()`. Stored arrays are read-only, and each output method returns an
+owned copy.
 
-## 4. NumPy-first implementation choices
+Tradeoff:
 
-**Decision:** Use NumPy arrays and vectorized operations as the primary computational model.
+- A plan retains several arrays until it is released.
 
-- Evidence:
-  - Input normalization to NumPy arrays (`seamcarver/core.py:95-104`).
-  - Vectorized DP row updates (`seamcarver/calculator.py:192-199`).
-  - Boolean-mask removal + reshape (`seamcarver/core.py:146-148`).
-- Rationale:
-  - Good performance/clarity balance for Python numerical code.
-  - Minimizes Python-level loops to seam-level control flow.
-- Tradeoff:
-  - Tight coupling to array shape conventions and dtype behavior (e.g., hardcoded RGB channel count `3` in reshapes) (`seamcarver/core.py:147`, `seamcarver/calculator.py:120`).
+## 3. Compatible energy callables
 
-## 5. CLI and library dual interface
+**Decision:** Accept plain functions and callable objects while retaining
+`EnergyMethod` for existing class-based implementations.
 
-**Decision:** Provide both a command-line tool and importable Python API.
+`SeamCalculator` validates every returned energy map before search. The map must
+be a finite, real, two-dimensional numeric array matching the current image.
 
-- Evidence:
-  - CLI entrypoint in package metadata (`pyproject.toml:56-58`).
-  - Public package exports for library usage (`seamcarver/__init__.py:64-72`).
-- Rationale:
-  - Supports end-users (CLI workflows) and developers/researchers (embedding in scripts).
-- Tradeoff:
-  - The CLI still uses the stateful compatibility interface and migrates
-    separately so its behavior can be checked independently.
+Tradeoff:
 
-## 6. Recompute energy after every seam
+- Validation and normalization add one full-map pass.
 
-**Decision:** Public operations recompute the energy map after each seam removal.
-The result therefore matches repeated one-seam calls.
+The CLI exposes only built-in methods. A CLI plugin system remains deferred
+until there is a demonstrated use case.
 
-- Rationale:
-  - Removal changes pixel neighborhoods and may change their energy.
-  - A hidden width-based batch heuristic made output depend on an undocumented
-    performance policy.
-- Tradeoff:
-  - Batching reduces energy recomputation, but exploratory comparisons showed
-    that it often selects different pixels.
-  - Its performance benefit needs reproducible benchmark coverage before it can
-    support a public speed claim.
+## 4. Vertical search with transposed height processing
 
-## 7. Keep batching private
+**Decision:** Implement one vertical seam-search algorithm. Height reduction
+transposes the current image and source-coordinate map before using the same
+logic.
 
-**Decision:** The planner retains an explicit private batch-size parameter for
-measurement. The calculator does not expose it or select a batch size
-automatically.
+This avoids duplicate dynamic-programming and backtracking implementations.
+Orientation is local to plan construction; callers never manage numeric
+direction values.
 
-- Rationale:
-  - This preserves the measured optimization without making an approximate mode
-    part of the public contract.
-- Revisit when:
-  - A demonstrated use case justifies an explicit fast mode with documented
-    output and quality expectations.
-- Compatibility:
-  - `SeamCalculator.MAP_DIMS_TO_SIZE` was removed without replacement because
-    automatic batching is no longer supported.
-  - The intended distribution remains unreleased. A version change will be
-    chosen during release preparation rather than for this internal beta change.
+## 5. Recompute energy after every seam
 
-## 8. Error handling and user feedback
+**Decision:** Public operations recompute the energy map after each removal.
 
-**Decision:** Centralize CLI error messaging and logging policy.
+Removal changes neighboring pixels and can change their energy. Iterative
+recomputation therefore matches repeated one-seam operations. A prior
+width-based batching heuristic selected different pixels without making that
+quality tradeoff explicit.
 
-- Evidence:
-  - Logging setup with `verbose`, `quiet`, and optional file handler (`seamcarver/logger.py:8-63`).
-  - `handle_error` maps exception categories to user-oriented messaging (`seamcarver/cli.py:130-160`).
-- Rationale:
-  - Improves UX for command-line users by providing actionable diagnostics.
-- Tradeoff:
-  - Some detail is intentionally hidden unless `--verbose` is set (`seamcarver/cli.py:156-159`).
+The private planner retains an explicit batch-size parameter for measurement.
+No public fast mode is offered without reproducible evidence and a documented
+result contract.
 
-## 9. Rejected alternatives (explicit vs implicit)
+## 6. Keep constants with their owners
 
-- **No explicit ADR/rejected-alternatives record** was found in the repository docs; rationale is mostly inferred from code comments and structure.
-- **Implicitly rejected by architecture shape:**
-  1. Separate horizontal algorithm implementation, in favor of transpose reuse (`seamcarver/core.py:21-31`, `45-50`).
-  2. Single hardcoded energy model, in favor of strategy abstraction (`seamcarver/methods/interface.py:13-35`).
-  3. CLI-only design, in favor of dual CLI + API distribution (`pyproject.toml:56-58`, `seamcarver/__init__.py:64-72`).
+**Decision:** Do not maintain a general constants module.
+
+- Gradient border energy lives in the gradient implementation.
+- The default highlight color lives with `ResizePlan`.
+- CLI directions remain the strings accepted by `argparse`.
+
+The retired `HORIZONTAL` and `VERTICAL` integers had no meaning after the
+stateful directional methods were removed. Local ownership makes each value's
+scope and compatibility status clear.
+
+## 7. CLI and library boundaries
+
+**Decision:** Keep both an importable library and a command-line interface.
+
+The CLI owns argument parsing, paths, saving, display, logging, and exit behavior.
+It maps `resize`, `remove`, and `highlight` commands onto `resize()` and
+`plan()`. The command vocabulary remains independent from the Python API shape.
+
+Tradeoff:
+
+- The CLI normalizes a source image before passing an array to a functional
+  operation, which may add an owned-array copy. This can be optimized later if
+  profiling shows a material cost.
+
+## 8. NumPy-first implementation
+
+**Decision:** Use RGB `uint8` NumPy arrays as the computational representation.
+
+Vectorized row updates, boolean masks, and source-index arrays keep the algorithm
+readable while avoiding Python loops over pixels. Array shapes and dtypes remain
+runtime invariants because current type annotations do not encode dimensions.
+
+## 9. Versioning during beta
+
+**Decision:** Do not change version `0.5.1` for this internal migration.
+
+The intended distribution has not been released. The final package name and
+release version will be chosen during release preparation. Documentation records
+the removed beta interface so older local callers have a migration path.
+
+## Deferred work
+
+- Seam insertion and enlargement
+- Forward-energy search
+- User-selectable resize ordering
+- A measured approximate or accelerated mode
+- Raw seam and cost-table APIs
+- CLI energy plugins

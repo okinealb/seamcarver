@@ -1,6 +1,5 @@
 import numpy as np
 
-from seamcarver.constants import BORDER_ENERGY
 from seamcarver.methods import GradientEnergy
 
 
@@ -9,10 +8,10 @@ def test_returns_expected_map(sample_image):
 
     assert energy.shape == sample_image.shape[:2]
     assert np.issubdtype(energy.dtype, np.floating)
-    assert np.all(energy[:, 0] == BORDER_ENERGY)
-    assert np.all(energy[0, :] == BORDER_ENERGY)
-    assert np.all(energy[:, -1] == BORDER_ENERGY)
-    assert np.all(energy[-1, :] == BORDER_ENERGY)
+    assert np.all(energy[:, 0] == 1000)
+    assert np.all(energy[0, :] == 1000)
+    assert np.all(energy[:, -1] == 1000)
+    assert np.all(energy[-1, :] == 1000)
     assert np.all(energy[1:-1, 1:-1] >= 0)
 
 

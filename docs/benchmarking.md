@@ -1,16 +1,21 @@
 # Benchmarking
 
-The benchmark suite measures vertical seam removal through
-`SeamCarver.remove()`. Image construction, file decoding, and file output are
-outside the timed section.
+The benchmark suite measures vertical seam removal through the public
+`resize()` function. Generated-image construction, file decoding, and file
+output are outside the timed section. Input normalization, owned-array copies,
+seam planning, and result construction are included.
 
 Each case uses an RGB `uint8` array generated with NumPy seed `42` and the
 default `GradientEnergy` method. The suite covers square images with widths of
 512, 1024, and 2048 pixels. A one-seam case records the fixed-cost baseline;
 the remaining cases remove 5, 50, and 200 seams to cover small, medium, and
 heavy removals.
-A fresh `SeamCarver` is created before every round because removal mutates the
-carver. Each case runs one warmup round followed by five measured rounds.
+The same source array can be reused because `resize()` does not mutate it. Each
+case runs one warmup round followed by five measured rounds.
+
+This target replaces the retired stateful API. Results produced before that
+change measure a different boundary and should not be compared with the new
+baseline.
 
 Results are grouped by seam count so each table compares the three image sizes
 at the same removal count. Removing 200 seams from the 512-pixel image reduces

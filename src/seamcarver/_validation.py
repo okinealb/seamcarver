@@ -6,8 +6,6 @@ from typing import SupportsIndex
 
 import numpy as np
 
-from .constants import HORIZONTAL, VERTICAL
-
 
 def _as_index(value: SupportsIndex, name: str) -> int:
     """Return a lossless integer value while rejecting booleans."""
@@ -17,16 +15,6 @@ def _as_index(value: SupportsIndex, name: str) -> int:
         return operator.index(value)
     except TypeError as error:
         raise TypeError(f"{name} must be an integer.") from error
-
-
-def validate_direction(direction: SupportsIndex) -> int:
-    """Return a supported seam direction."""
-    direction = _as_index(direction, "direction")
-    if direction not in (HORIZONTAL, VERTICAL):
-        raise ValueError(
-            f"direction must be HORIZONTAL ({HORIZONTAL}) or VERTICAL ({VERTICAL})."
-        )
-    return direction
 
 
 def validate_num_seams(num_seams: SupportsIndex, width: int) -> int:

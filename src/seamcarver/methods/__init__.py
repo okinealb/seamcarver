@@ -11,14 +11,19 @@ Available Energy Methods:
 - `SobelEnergy`: Uses the Sobel operator to compute the gradient magnitude, emphasizing edges by measuring intensity changes in both horizontal and vertical directions.
 - `GradientEnergy`: Computes the energy map based on image gradients, providing a measure of pixel importance based on local changes in intensity.
 
-To use an energy method, instantiate it and pass it to the SeamCarver class.
+To use an energy method, instantiate it and pass it to `resize` or `plan`.
 
 Example:
 
-    from seamcarver import SobelEnergy, LaplacianEnergy
-    energy_method = SobelEnergy()
-    # or
-    energy_method = LaplacianEnergy()
+    import seamcarver
+
+    energy_method = seamcarver.SobelEnergy()
+    result = seamcarver.resize(
+        image,
+        height=480,
+        width=640,
+        method=energy_method,
+    )
 
 Note: These methods assume that the image is always in a vertical orientation for seam carving.
 For horizontal seams, the image should be transposed before passing it to the methods.

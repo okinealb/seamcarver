@@ -1,129 +1,116 @@
 # Architecture
 
-This document describes the current architecture of the `seamcarver` repository, with emphasis on decomposition, responsibilities, and data/control flow.
+`seamcarver` separates input/output concerns, public resize orchestration,
+repeated seam planning, one-seam search, and energy calculation.
 
-The core architecture follows a straightforward, linear pipeline:
-User input is received via the CLI or Python API, passed to the central SeamCarver orchestrator, which coordinates energy map calculation and seam identification through dedicated components. The result—a resized image—is then returned or saved.
 ```mermaid
 flowchart TD
-    CLI_API["1. CLI / Python API"]
-    SeamCarver["2. SeamCarver (Main Orchestrator)"]
-    SeamCalculator["3. SeamCalculator (Seam Computation)"]
-    EnergyMethod["3a. EnergyMethod (Energy Calculation)"]
-    Result["4. Result Image (Output)"]
+    Client["Python caller or CLI"]
+    Core["resize() / plan()"]
+    Plan["ResizePlan construction"]
+    Calculator["SeamCalculator"]
+    Planner["Repeated seam planner"]
+    Search["One-seam search"]
+    Energy["Energy callable"]
+    Result["Carved or highlighted image"]
 
-    CLI_API --> SeamCarver
-    SeamCarver --> SeamCalculator
-    SeamCalculator -- energy computation --> EnergyMethod
-    SeamCalculator --> Result
-    SeamCarver --> Result
+    Client --> Core
+    Core --> Plan
+    Plan --> Calculator
+    Calculator --> Planner
+    Planner --> Search
+    Planner --> Energy
+    Plan --> Result
+    Core --> Result
 ```
 
-## 1. System decomposition
+## Components
 
-The repository is organized into four primary layers:
+### Public operations
 
-1. **CLI boundary (`seamcarver/cli.py`)**  
-   Parses commands/options, configures logging, maps user intent to library operations, and handles CLI-facing failures (`seamcarver/cli.py:20-80`, `82-129`, `130-160`).
+`src/seamcarver/core.py` exposes two ordinary entry points:
 
-2. **Orchestration layer (`SeamCarver` in `seamcarver/core.py`)**  
-   Owns image state and high-level operations (`resize`, `remove`, `highlight`, `display`, `save`) and delegates seam finding to `SeamCalculator` (`seamcarver/core.py:35-50`, `125-168`).
+- `resize()` normalizes an image, validates target dimensions, builds a plan,
+  and returns an owned carved image.
+- `plan()` returns a `ResizePlan` when callers need both the carved result and a
+  preview based on the same seam decisions.
 
-3. **Algorithm layer (`SeamCalculator` in `seamcarver/calculator.py`)**  
-   Computes seam masks using energy-map generation, cumulative-cost dynamic programming, and backtracking (`seamcarver/calculator.py:77-127`, `185-240`).
+Neither operation mutates the caller's input.
 
-4. **Energy strategy layer (`seamcarver/methods/`)**  
-   Defines the `EnergyMethod` interface and concrete implementations (`GradientEnergy`, `SobelEnergy`, `LaplacianEnergy`) (`seamcarver/methods/interface.py:13-35`, `seamcarver/methods/gradient.py:16-31`, `seamcarver/methods/sobel.py:16-30`, `seamcarver/methods/laplacian.py:16-29`).
+### Resize plans
 
-Private boundary modules normalize image inputs (`src/seamcarver/_image.py`) and
-operation parameters (`src/seamcarver/_validation.py`). Other supporting modules
-provide constants and logging.
+`src/seamcarver/_plan.py` owns multi-direction resize orchestration and the
+`ResizePlan` result. A plan stores independent source, result, and removal-mask
+arrays. Its internal arrays are read-only; `carve()` and `highlight()` return
+owned copies.
 
-## 2. High-level responsibilities
+Width reduction runs first. Height reduction transposes the current image and
+source-coordinate map, reuses vertical seam processing, then restores the
+original orientation.
 
-### 2.1 `SeamCarver`
+### Seam calculation
 
-- Accepts ndarray, nested-list, PIL image, string-path, and `os.PathLike` inputs
-  (`src/seamcarver/_image.py`, `normalize_image`).
-- Owns an RGB `uint8` NumPy array shaped `(height, width, 3)`. NumPy inputs must
-  already satisfy that contract. Integer lists are validated before conversion;
-  PIL images and file inputs are converted to RGB.
-- Accepts integer-like operation parameters at public boundaries. The validation
-  module converts them to built-in `int` values before algorithmic processing.
-- Exposes public image operations:
-  - `resize(height, width)` validates both targets before shrinking and restores
-    the original image if processing fails.
-  - `remove(direction, num_seams)` removes seam pixels using the returned mask.
-  - `highlight(direction, num_seams, color)` marks seam pixels.
-  - `add(direction, num_seams)` is reserved for future work and currently raises
-    `NotImplementedError`.
-- Owns the `SeamCalculator` instance (`seamcarver/core.py:111-113`).
+`src/seamcarver/calculator.py` validates an energy callable's output and delegates
+repeated removal to the private planner. It returns a boolean mask in source-image
+coordinates and does not mutate its input.
 
-### 2.2 `SeamCalculator`
+`src/seamcarver/_planner.py` owns repeated energy computation, seam removal, and
+source-coordinate tracking. Public operations recompute energy after every seam.
 
-- Encapsulates seam-search computation and is callable (`__call__`) for a requested seam count (`seamcarver/calculator.py:77-83`).
-- Uses configured `EnergyMethod` for energy map computation (`seamcarver/calculator.py:179-183`).
-- Builds a `float64` cumulative cost table with row-wise DP transitions. Energy
-  maps remain `float32`; the wider accumulator prevents path-cost overflow.
-- Backtracks minimum seams from the final row and invalidates chosen seam pixels with `np.inf` to support repeated extraction (`seamcarver/calculator.py:204-239`).
-- Returns seam positions as a boolean mask in the original image coordinate space (`seamcarver/calculator.py:106-127`).
+`src/seamcarver/_search.py` contains the dynamic-programming cost calculation and
+one-seam backtracking logic.
 
-### 2.3 Energy callables and implementations
+### Energy callables
 
-- Plain functions, callable objects, and `EnergyMethod` subclasses may implement
-  `__call__(image) -> energy_map`.
-- The calculator requires a real numeric NumPy array matching the image height
-  and width. It rejects nonfinite values and owns the normalized `float32` copy.
-- `GradientEnergy` computes gradient-magnitude-like interior energy with fixed border energy (`seamcarver/methods/gradient.py:23-31`, `seamcarver/constants.py:14-15`).
-- `SobelEnergy` and `LaplacianEnergy` convert to grayscale then apply SciPy operators (`seamcarver/methods/sobel.py:25-30`, `seamcarver/methods/laplacian.py:25-29`).
+`src/seamcarver/methods/` contains the built-in gradient, Sobel, and Laplacian
+methods. Plain functions and callable objects are also accepted. The calculator
+requires a finite, real, two-dimensional numeric map matching the current image
+height and width.
 
-## 3. Data flow (images, energy maps, seams, masks)
+### Input and validation boundaries
 
-1. **Input ingestion**  
-   CLI reads `input` path and constructs `SeamCarver` (`seamcarver/cli.py:42-43`, `91-94`).
+`src/seamcarver/_image.py` converts supported inputs into owned RGB `uint8`
+arrays. `src/seamcarver/_validation.py` handles integer-like dimensions, seam
+counts, and RGB colors.
 
-2. **In-memory image state**  
-   `SeamCarver.image` is the mutable source of truth (`seamcarver/core.py:53-54`, `120-123`).
+### CLI boundary
 
-3. **Direction normalization**  
-   Horizontal requests use a local transposed view. The stored image is updated
-   only after seam processing succeeds (`src/seamcarver/core.py`, `_orient_image`).
+`src/seamcarver/cli.py` owns command parsing, filesystem input/output, display,
+logging, and user-facing failures. It maps commands onto the functional API:
 
-4. **Energy map generation**  
-   `SeamCalculator` validates the configured method's result and copies it to a
-   finite `float32` energy table.
+- `resize` passes target dimensions to `resize()`.
+- `remove` converts direction and count to target dimensions, then carves a plan.
+- `highlight` converts direction and count to target dimensions, then highlights
+  the plan.
 
-5. **Seam extraction loop**  
-   For each seam: compute costs, backtrack minimum path, mark path in seam mask, invalidate energy values (`seamcarver/calculator.py:143-150`, `204-239`).
+The CLI keeps direction strings at its boundary. The Python API does not expose
+numeric direction constants.
 
-6. **Mask reconstruction and application**  
-   Calculator reconstructs original-coordinate seam mask (`seamcarver/calculator.py:123-127`), then:
-   - `remove`: drops masked pixels and reshapes (`seamcarver/core.py:145-148`)
-   - `highlight`: writes highlight color into masked pixels (`seamcarver/core.py:159-160`, `seamcarver/constants.py:16-17`)
+## Data flow
 
-7. **Output boundary**  
-   Result image is saved by `SeamCarver.save`, invoked by CLI (`seamcarver/core.py:166-168`, `seamcarver/cli.py:123-125`).
+1. A caller supplies an image and target dimensions.
+2. Input normalization creates an owned RGB `uint8` array.
+3. Target validation rejects zero, negative, or enlarged dimensions.
+4. The plan builder removes width seams, followed by height seams when needed.
+5. Each removal recomputes energy, finds one connected seam, and updates the
+   working image and source-coordinate map.
+6. `ResizePlan` stores the final image and a source-sized removal mask.
+7. The caller receives an owned carved or highlighted image.
 
-## 4. Control flow
+Errors propagate without exposing a partial result or mutating the source input.
 
-- CLI command dispatch:
-  - `resize` → `SeamCarver.resize`
-  - `remove` → `SeamCarver.remove`
-  - `highlight` → `SeamCarver.highlight` (+ display)  
-  (`seamcarver/cli.py:99-121`)
-- `resize` validates both dimensions, then performs only the required directional
-  removals. Equal dimensions are no-ops; larger dimensions are rejected.
-- `SeamCalculator.__call__` delegates repeated removal to the private planner.
-- The planner recomputes energy after every removal and maps each seam back to
-  the source image.
-- A failed extraction raises instead of returning a partial mask.
+## Public boundaries
 
-## 5. Extensibility boundaries
+The intended public surface is:
 
-- **Primary extension point**: pass a compatible energy function, callable
-  object, or `EnergyMethod` subclass through the `method` argument.
-- **Public API boundary**: `resize()` handles ordinary transformations;
-  `plan()` returns reusable `ResizePlan` decisions for matching carved and
-  highlighted outputs. The package also retains `SeamCarver`, direction
-  constants, and energy methods during the beta migration.
-- **CLI boundary**: command vocabulary and logging behavior are isolated from algorithm internals (`seamcarver/cli.py:35-77`, `seamcarver/logger.py:8-63`).
+- `resize`
+- `plan` and `ResizePlan`
+- `SeamCalculator`
+- `EnergyMethod` and the built-in energy methods
+
+The mutable `SeamCarver` compatibility class and numeric direction constants
+were retired during beta. The intended distribution remains unreleased, so the
+version will be chosen during release preparation.
+
+Internal seam arrays, source-coordinate maps, cost tables, planner controls, and
+default implementation constants remain private.
