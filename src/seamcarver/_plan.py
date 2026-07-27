@@ -2,17 +2,23 @@
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import SupportsIndex
 
 import numpy as np
 import numpy.typing as npt
 
+from ._validation import validate_color
 from .calculator import SeamCalculator
 from .constants import HIGHLIGHT_COLOR
 
 
-@dataclass(eq=False, frozen=True, slots=True)
-class _ResizePlan:
-    """Store one completed resize and its source-pixel removals."""
+@dataclass(eq=False, frozen=True, repr=False, slots=True)
+class ResizePlan:
+    """Store one completed resize and its source-pixel removals.
+
+    Create plans with :func:`seamcarver.plan` rather than constructing this
+    class directly.
+    """
 
     _source: npt.NDArray[np.uint8]
     _result: npt.NDArray[np.uint8]
@@ -22,6 +28,12 @@ class _ResizePlan:
         self._source.flags.writeable = False
         self._result.flags.writeable = False
         self._removed.flags.writeable = False
+
+    def __repr__(self) -> str:
+        return (
+            f"ResizePlan(source_shape={self.source_shape}, "
+            f"target_shape={self.target_shape})"
+        )
 
     @property
     def source_shape(self) -> tuple[int, int, int]:
@@ -45,9 +57,14 @@ class _ResizePlan:
 
     def highlight(
         self,
-        color: Sequence[int] = HIGHLIGHT_COLOR,
+        color: Sequence[SupportsIndex] = HIGHLIGHT_COLOR,
     ) -> npt.NDArray[np.uint8]:
-        """Return an owned source image with planned removals colored."""
+        """Return an owned source image with planned removals colored.
+
+        Args:
+            color: Three RGB integer values from 0 through 255.
+        """
+        color = validate_color(color)
         preview = self._source.copy()
         preview[self._removed] = color
         return preview
@@ -59,7 +76,7 @@ def build_plan(
     height: int,
     width: int,
     calculator: SeamCalculator,
-) -> _ResizePlan:
+) -> ResizePlan:
     """Build a width-first shrinking plan from validated inputs."""
     source = image.copy()
     working = image.copy()
@@ -90,7 +107,7 @@ def build_plan(
         removed[removed_indices] = True
         working = np.ascontiguousarray(np.transpose(oriented_image, (1, 0, 2)))
 
-    return _ResizePlan(
+    return ResizePlan(
         source,
         working,
         removed.reshape(source_height, source_width),

@@ -6,10 +6,10 @@ from seamcarver.cli import main
 from seamcarver.constants import HIGHLIGHT_COLOR
 
 
-def test_resize_writes_requested_dimensions(capsys, cli_image_path, output_path):
+def test_resize_writes_requested_dimensions(capsys, input_image_path, output_path):
     main(
         [
-            cli_image_path,
+            input_image_path,
             "resize",
             "4",
             "5",
@@ -29,11 +29,11 @@ def test_resize_writes_requested_dimensions(capsys, cli_image_path, output_path)
 
 
 def test_resize_without_output_does_not_save(
-    capsys, cli_image_path, tmp_path, monkeypatch
+    capsys, input_image_path, tmp_path, monkeypatch
 ):
     monkeypatch.chdir(tmp_path)
 
-    main([cli_image_path, "resize", "4", "5"])
+    main([input_image_path, "resize", "4", "5"])
 
     captured = capsys.readouterr()
 
@@ -51,11 +51,11 @@ def test_resize_without_output_does_not_save(
     ids=["vertical", "horizontal"],
 )
 def test_remove_writes_expected_dimensions(
-    direction, count, size, capsys, cli_image_path, output_path
+    direction, count, size, capsys, input_image_path, output_path
 ):
     main(
         [
-            cli_image_path,
+            input_image_path,
             "remove",
             "--direction",
             direction,
@@ -75,10 +75,10 @@ def test_remove_writes_expected_dimensions(
         assert output.size == size
 
 
-def test_remove_defaults_to_one_seam(capsys, cli_image_path, output_path):
+def test_remove_defaults_to_one_seam(capsys, input_image_path, output_path):
     main(
         [
-            cli_image_path,
+            input_image_path,
             "remove",
             "--direction",
             "vertical",
@@ -108,13 +108,13 @@ def test_highlight_writes_colored_seams(
     count,
     expected_pixels,
     capsys,
-    cli_image_path,
+    input_image_path,
     output_path,
     monkeypatch,
 ):
     monkeypatch.setattr("seamcarver.cli.SeamCarver.display", lambda self: None)
     args = [
-        cli_image_path,
+        input_image_path,
         "highlight",
         "--direction",
         direction,

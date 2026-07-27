@@ -22,11 +22,11 @@ def test_missing_image_exits_nonzero(capsys):
     ],
     ids=["resize", "remove", "highlight"],
 )
-def test_processing_error_does_not_save(command, capsys, cli_image_path, output_path):
+def test_processing_error_does_not_save(command, capsys, input_image_path, output_path):
     with pytest.raises(SystemExit) as exc_info:
         main(
             [
-                cli_image_path,
+                input_image_path,
                 *command,
                 "--output",
                 str(output_path),
@@ -47,13 +47,13 @@ def test_processing_error_does_not_save(command, capsys, cli_image_path, output_
     ids=["default", "verbose"],
 )
 def test_unexpected_error_controls_traceback(
-    verbose, shows_traceback, capsys, cli_image_path, monkeypatch
+    verbose, shows_traceback, capsys, input_image_path, monkeypatch
 ):
     def fail_resize(*args, **kwargs):
         raise RuntimeError("resize failed")
 
     monkeypatch.setattr("seamcarver.cli.SeamCarver.resize", fail_resize)
-    args = [cli_image_path]
+    args = [input_image_path]
     if verbose:
         args.append("--verbose")
     args.extend(["resize", "4", "5"])
@@ -68,14 +68,14 @@ def test_unexpected_error_controls_traceback(
     assert ("Traceback" in captured.err) is shows_traceback
 
 
-def test_keyboard_interrupt_exits_130(capsys, cli_image_path, monkeypatch):
+def test_keyboard_interrupt_exits_130(capsys, input_image_path, monkeypatch):
     def interrupt_resize(*args, **kwargs):
         raise KeyboardInterrupt
 
     monkeypatch.setattr("seamcarver.cli.SeamCarver.resize", interrupt_resize)
 
     with pytest.raises(SystemExit) as exc_info:
-        main([cli_image_path, "resize", "4", "5"])
+        main([input_image_path, "resize", "4", "5"])
 
     captured = capsys.readouterr()
 

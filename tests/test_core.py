@@ -20,7 +20,7 @@ class FailingEnergy:
         return np.zeros(image.shape[:2], dtype=float)
 
 
-def test_default_calculator(carver):
+def test_uses_default_calculator(carver):
     assert isinstance(carver.calculator, SeamCalculator)
 
 

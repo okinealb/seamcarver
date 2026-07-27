@@ -1,6 +1,7 @@
 """Internal validation for seam-operation parameters."""
 
 import operator
+from collections.abc import Sequence
 from typing import SupportsIndex
 
 import numpy as np
@@ -53,3 +54,18 @@ def validate_resize_target(
             "seam addition is not implemented."
         )
     return target
+
+
+def validate_color(
+    color: Sequence[SupportsIndex],
+) -> tuple[int, int, int]:
+    """Return three RGB channel values from 0 through 255."""
+    if len(color) != 3:
+        raise ValueError("color must contain exactly three RGB channels.")
+
+    channels = tuple(
+        _as_index(value, f"color[{index}]") for index, value in enumerate(color)
+    )
+    if any(value < 0 or value > 255 for value in channels):
+        raise ValueError("color channels must be integers from 0 to 255.")
+    return channels[0], channels[1], channels[2]

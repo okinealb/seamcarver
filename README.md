@@ -28,7 +28,8 @@ Detailed engineering documentation is available in the [`docs/`](docs/) director
 
 Seam carving finds connected pixel paths with minimal cumulative energy and removes them iteratively to resize images while preserving salient structures. This repository provides:
 
-- A reusable Python library (`SeamCarver`) for integration into scripts and applications
+- A functional Python API for integration into scripts and applications
+- A stateful `SeamCarver` compatibility interface
 - A CLI (`seamcarver`) for direct image processing workflows
 - Extensible energy-method abstractions for algorithm experimentation
 - A dynamic-programming seam computation pipeline that recalculates energy after
@@ -93,18 +94,48 @@ seamcarver <input> <command> [options]
 ## Library Usage
 
 ```python
-from seamcarver import SeamCarver, SobelEnergy
+import seamcarver
 
-carver = SeamCarver("examples/medium.jpg", method=SobelEnergy())
+result = seamcarver.resize(
+    "examples/medium.jpg",
+    height=240,
+    width=400,
+    method=seamcarver.SobelEnergy(),
+)
+```
+
+Request a reusable plan when a preview must show the exact pixels removed from
+the result:
+
+```python
+resize_plan = seamcarver.plan(
+    "examples/medium.jpg",
+    height=240,
+    width=400,
+)
+
+preview = resize_plan.highlight()
+result = resize_plan.carve()
+```
+
+The stateful class remains available during the beta API migration:
+
+```python
+carver = seamcarver.SeamCarver("examples/medium.jpg")
 carver.resize(height=240, width=400)
-carver.save("resized.jpg")
+result = carver.image
 ```
 
 ## Architecture
 
 ### `SeamCarver` (`seamcarver/core.py`)
 
-High-level orchestration layer that handles image I/O, seam operations, highlighting, saving/displaying, and horizontal processing through transpose abstraction.
+Compatibility interface for stateful image operations, saving, and display.
+
+### Functional API (`seamcarver/core.py`)
+
+`resize()` returns an owned transformed image. `plan()` computes reusable seam
+decisions for matching carved and highlighted outputs.
 
 ### `SeamCalculator` (`seamcarver/calculator.py`)
 
@@ -112,7 +143,9 @@ Core algorithm layer that computes energy maps, builds cumulative DP cost tables
 
 ### Energy interface + implementations (`seamcarver/methods/`)
 
-`EnergyMethod` defines the energy-function contract; concrete implementations (`GradientEnergy`, `SobelEnergy`, `LaplacianEnergy`) are interchangeable strategies.
+`EnergyMethod` remains an optional abstract base class. The built-in
+`GradientEnergy`, `SobelEnergy`, and `LaplacianEnergy` callables are
+interchangeable.
 
 ### CLI layer (`seamcarver/cli.py`)
 
@@ -132,7 +165,8 @@ Argument parsing, command routing, logging setup, and operational error handling
 - **SobelEnergy**: Sobel operator on grayscale image
 - **LaplacianEnergy**: Laplacian operator on grayscale image
 
-Custom methods can be added by subclassing `EnergyMethod` and implementing `__call__(image) -> np.ndarray`.
+Custom methods may be plain functions, callable objects, or `EnergyMethod`
+subclasses implementing `__call__(image) -> np.ndarray`.
 
 ## Optimization Notes
 

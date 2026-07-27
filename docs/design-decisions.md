@@ -2,22 +2,26 @@
 
 This document captures the major engineering decisions visible in the current implementation, why they were likely made, and tradeoffs.
 
-## 1. Split orchestration from seam computation
+## 1. Split public operations from seam computation
 
-**Decision:** Use `SeamCarver` for user-facing operations and `SeamCalculator` for algorithmic seam extraction.
+**Decision:** Use `resize()` and `plan()` for ordinary user operations and
+`SeamCalculator` for algorithmic seam extraction. Retain `SeamCarver` during
+the beta migration.
 
 - Evidence:
-  - `SeamCarver` manages loading, operation sequencing, and I/O (`seamcarver/core.py:61-113`, `125-168`).
-  - `SeamCalculator` owns DP seam search internals (`seamcarver/calculator.py:26-33`, `185-240`).
+  - `resize()` returns an owned transformed image.
+  - `plan()` returns reusable seam decisions for carving and highlighting.
+  - `SeamCalculator` validates energy maps and delegates seam planning.
 - Rationale:
-  - Keeps computational core reusable and easier to test in isolation.
-  - Prevents CLI/UI concerns from leaking into algorithm code.
+  - An input-to-output function avoids partial mutable state.
+  - A plan prevents duplicate seam search when callers need both outputs.
 - Tradeoff:
-  - Slightly more indirection than a monolithic class.
+  - `ResizePlan` retains source, result, and mask arrays.
 
 ## 2. Strategy interface for energy methods
 
-**Decision:** Define abstract `EnergyMethod` and inject concrete methods.
+**Decision:** Accept any compatible energy callable while retaining the
+`EnergyMethod` abstract base class.
 
 - Evidence:
   - Interface contract (`seamcarver/methods/interface.py:13-35`).
@@ -25,7 +29,7 @@ This document captures the major engineering decisions visible in the current im
   - Built-ins: `GradientEnergy`, `SobelEnergy`, `LaplacianEnergy` (`seamcarver/methods/__init__.py:30-39`).
 - Rationale:
   - Allows experimentation without changing seam search logic.
-  - Supports research/benchmark use cases with interchangeable models.
+  - Plain functions and callable objects do not need explicit inheritance.
 - Tradeoff:
   - The calculator validates each result and copies it to `float32`. This adds
     one full-map validation pass but keeps plugin errors out of the seam search.
@@ -70,7 +74,8 @@ operations through a local transposed view.
 - Rationale:
   - Supports end-users (CLI workflows) and developers/researchers (embedding in scripts).
 - Tradeoff:
-  - CLI currently prioritizes operational simplicity over full configurability (e.g., no argument for selecting energy method; default constructor path uses `GradientEnergy`) (`seamcarver/cli.py:93`, `seamcarver/core.py:64-65`).
+  - The CLI still uses the stateful compatibility interface and migrates
+    separately so its behavior can be checked independently.
 
 ## 6. Recompute energy after every seam
 

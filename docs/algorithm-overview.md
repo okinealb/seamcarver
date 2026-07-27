@@ -27,7 +27,9 @@ after processing succeeds (`src/seamcarver/core.py`, `_orient_image`).
 
 ## 4. Energy-map generation
 
-`SeamCalculator` delegates energy computation to an injected `EnergyMethod` strategy (`seamcarver/calculator.py:67-75`, `179-183`, `seamcarver/methods/interface.py:13-35`).
+`SeamCalculator` delegates energy computation to an injected callable. Plain
+functions, callable objects, and `EnergyMethod` subclasses share the same
+runtime validation.
 It validates the returned shape, dtype, and values, then copies the map to
 `float32` before seam extraction.
 
@@ -74,6 +76,10 @@ single-seam removal.
 
 ## 8. Applying seams to user operations
 
+- **Functional resize**: `resize()` returns the carved image without mutating the
+  source input.
+- **Plan**: `plan()` performs seam search once; `ResizePlan.carve()` and
+  `ResizePlan.highlight()` return independent images from the same decisions.
 - **Remove**: drop seam pixels and reshape to reduce width by seam count (`seamcarver/core.py:145-148`).
 - **Highlight**: color seam pixels without removing them (`seamcarver/core.py:159-160`, `seamcarver/constants.py:16-17`).
 - **Resize**: shrink one or both dimensions, or leave them unchanged. Enlargement

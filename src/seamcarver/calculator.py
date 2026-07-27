@@ -16,7 +16,8 @@ import numpy.typing as npt
 
 from ._planner import find_seams
 from ._validation import validate_num_seams
-from .methods import EnergyMethod, GradientEnergy
+from .methods import GradientEnergy
+from .methods.interface import EnergyCallable
 
 
 # Main class for seam carving calculations
@@ -29,8 +30,7 @@ class SeamCalculator:
     paths suitable for image resizing.
 
     Attributes:
-        method (EnergyMethod): Energy computation method for detecting image
-            features and edges.
+        method: Callable that computes pixel energy for seam detection.
 
     Examples:
         >>> calculator = SeamCalculator()
@@ -46,10 +46,10 @@ class SeamCalculator:
     """
 
     # Class attributes
-    method: EnergyMethod
-    """EnergyMethod: method to calculate the energy of the image."""
+    method: EnergyCallable
+    """Callable used to calculate image energy."""
 
-    def __init__(self, method: EnergyMethod = GradientEnergy()) -> None:
+    def __init__(self, method: EnergyCallable = GradientEnergy()) -> None:
         """Initialize the SeamCalculator with an energy computation method.
 
         Args:

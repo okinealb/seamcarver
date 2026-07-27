@@ -68,9 +68,10 @@ provide constants and logging.
 - Backtracks minimum seams from the final row and invalidates chosen seam pixels with `np.inf` to support repeated extraction (`seamcarver/calculator.py:204-239`).
 - Returns seam positions as a boolean mask in the original image coordinate space (`seamcarver/calculator.py:106-127`).
 
-### 2.3 `EnergyMethod` and implementations
+### 2.3 Energy callables and implementations
 
-- `EnergyMethod` defines the pluggable contract: `__call__(image) -> energy_map` (`seamcarver/methods/interface.py:33-50`).
+- Plain functions, callable objects, and `EnergyMethod` subclasses may implement
+  `__call__(image) -> energy_map`.
 - The calculator requires a real numeric NumPy array matching the image height
   and width. It rejects nonfinite values and owns the normalized `float32` copy.
 - `GradientEnergy` computes gradient-magnitude-like interior energy with fixed border energy (`seamcarver/methods/gradient.py:23-31`, `seamcarver/constants.py:14-15`).
@@ -119,6 +120,10 @@ provide constants and logging.
 
 ## 5. Extensibility boundaries
 
-- **Primary extension point**: add new energy strategies by subclassing `EnergyMethod` and passing instances into `SeamCarver(method=...)` or `SeamCalculator(method=...)` (`seamcarver/methods/interface.py:13-35`, `seamcarver/core.py:61-65`, `seamcarver/calculator.py:67-75`).
-- **Public API boundary**: package exports only key symbols (`SeamCarver`, direction constants, energy interface and built-ins), keeping internal helpers non-public (`seamcarver/__init__.py:64-72`).
+- **Primary extension point**: pass a compatible energy function, callable
+  object, or `EnergyMethod` subclass through the `method` argument.
+- **Public API boundary**: `resize()` handles ordinary transformations;
+  `plan()` returns reusable `ResizePlan` decisions for matching carved and
+  highlighted outputs. The package also retains `SeamCarver`, direction
+  constants, and energy methods during the beta migration.
 - **CLI boundary**: command vocabulary and logging behavior are isolated from algorithm internals (`seamcarver/cli.py:35-77`, `seamcarver/logger.py:8-63`).

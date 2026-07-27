@@ -6,10 +6,10 @@ from seamcarver.cli import main
 from seamcarver.logger import ColoredFormatter, setup_cli_logging
 
 
-def test_verbose_includes_debug(capsys, cli_image_path, output_path):
+def test_verbose_includes_debug(capsys, input_image_path, output_path):
     main(
         [
-            cli_image_path,
+            input_image_path,
             "--verbose",
             "resize",
             "4",
@@ -28,10 +28,10 @@ def test_verbose_includes_debug(capsys, cli_image_path, output_path):
     assert output_path.exists()
 
 
-def test_quiet_suppresses_info(capsys, cli_image_path, output_path):
+def test_quiet_suppresses_info(capsys, input_image_path, output_path):
     main(
         [
-            cli_image_path,
+            input_image_path,
             "--quiet",
             "resize",
             "4",
@@ -48,11 +48,11 @@ def test_quiet_suppresses_info(capsys, cli_image_path, output_path):
     assert output_path.exists()
 
 
-def test_file_receives_messages(capsys, cli_image_path, output_path, tmp_path):
+def test_file_receives_messages(capsys, input_image_path, output_path, tmp_path):
     log_path = tmp_path / "seamcarver.log"
     main(
         [
-            cli_image_path,
+            input_image_path,
             "--log-file",
             str(log_path),
             "resize",
