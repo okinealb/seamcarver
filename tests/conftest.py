@@ -29,7 +29,7 @@ def carver(sample_image):
 
 
 @pytest.fixture
-def cli_image_path(tmp_path):
+def input_image_path(tmp_path):
     image = np.arange(6 * 7 * 3, dtype=np.uint8).reshape(6, 7, 3)
     path = tmp_path / "input.png"
     Image.fromarray(image).save(path)

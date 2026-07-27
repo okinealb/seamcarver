@@ -38,7 +38,7 @@ class TestSeamCalculation:
         ],
         ids=["single-row", "square", "two-seams", "three-seams"],
     )
-    def test_returns_consistent_mask(self, shape, num_seams):
+    def test_returns_valid_mask(self, shape, num_seams):
         height, _ = shape
         image = np.zeros((*shape, 3), dtype=np.uint8)
 
