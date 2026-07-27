@@ -32,6 +32,17 @@ class TestResize:
 
         assert carver.image.shape == (*target, 3)
 
+    def test_matches_width_first_sequential_removal(self):
+        image = np.arange(4 * 5 * 3, dtype=np.uint8).reshape(4, 5, 3)
+        resized = SeamCarver(image)
+        sequential = SeamCarver(image)
+
+        resized.resize(3, 3)
+        sequential.remove(VERTICAL, 2)
+        sequential.remove(HORIZONTAL, 1)
+
+        assert np.array_equal(resized.image, sequential.image)
+
     def test_same_shape_is_no_op(self, carver):
         original = carver.image.copy()
 
