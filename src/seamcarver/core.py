@@ -18,6 +18,7 @@ from PIL import Image
 
 # Import project-specific packages
 from ._image import ImageInput, normalize_image
+from ._plan import build_plan
 from ._validation import validate_direction, validate_resize_target
 from .calculator import SeamCalculator
 from .constants import HIGHLIGHT_COLOR, HORIZONTAL, VERTICAL
@@ -111,17 +112,16 @@ class SeamCarver:
         """
         height = validate_resize_target("height", height, self.shape[0])
         width = validate_resize_target("width", width, self.shape[1])
-        original_image = self.image
+        if (height, width) == self.shape[:2]:
+            return
 
-        try:
-            if width < self.shape[1]:
-                self.remove(direction=VERTICAL, num_seams=self.shape[1] - width)
-            if height < self.shape[0]:
-                self.remove(direction=HORIZONTAL, num_seams=self.shape[0] - height)
-        except BaseException:
-            # Restore state even when resizing is interrupted
-            self.image = original_image
-            raise
+        plan = build_plan(
+            self.image,
+            height=height,
+            width=width,
+            calculator=self.calculator,
+        )
+        self.image = plan.carve()
 
     def remove(
         self,
