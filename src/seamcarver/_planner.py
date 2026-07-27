@@ -1,6 +1,6 @@
 """Internal multi-seam planning."""
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 
 import numpy as np
 import numpy.typing as npt
@@ -11,28 +11,18 @@ EnergyComputer = Callable[
     [npt.NDArray[np.uint8]],
     npt.NDArray[np.float32],
 ]
-_BatchSizeRules = Sequence[tuple[int, float]]
-
-_BATCH_SIZE_RULES = (
-    (1000, 12.5),
-    (500, 10.0),
-    (100, 8.33),
-    (20, 6.67),
-    (0, 5.0),
-)
 
 
 def find_seams(
     image: npt.NDArray[np.uint8],
     num_seams: int,
     compute_energy: EnergyComputer,
-    batch_size_rules: _BatchSizeRules = _BATCH_SIZE_RULES,
+    batch_size: int = 1,
 ) -> npt.NDArray[np.bool_]:
     """Return planned seams in the source image's coordinates."""
     height, width = image.shape[:2]
     image = image.copy()
     kept: npt.NDArray[np.signedinteger] = np.arange(height * width)
-    batch_size = _batch_size(width, batch_size_rules)
 
     while num_seams > 0:
         found, seams = _find_batch(
@@ -51,14 +41,6 @@ def find_seams(
     mask = np.ones(height * width, dtype=bool)
     mask[kept] = False
     return mask.reshape(height, width)
-
-
-def _batch_size(width: int, rules: _BatchSizeRules) -> int:
-    """Return the existing width-based batch size."""
-    for minimum_width, percent in rules:
-        if width >= minimum_width:
-            return int(max(1, width * percent // 100))
-    return 1
 
 
 def _find_batch(
