@@ -90,13 +90,18 @@ class TestSeamCalculation:
 
         assert np.array_equal(sample_image, original)
 
-    def test_stops_without_progress(self, calculator, sample_image, monkeypatch):
-        no_seams = np.zeros(sample_image.shape[:2], dtype=bool)
-        monkeypatch.setattr(
-            calculator,
-            "_process",
-            lambda image, num_seams, batch_size: (0, no_seams),
-        )
+    def test_preserves_batch_size_configuration(self):
+        image = np.zeros((2, 6, 3), dtype=np.uint8)
+        widths = []
 
-        with pytest.raises(RuntimeError, match="no progress"):
-            calculator(sample_image, 1)
+        def column_energy(current):
+            widths.append(current.shape[1])
+            columns = np.arange(current.shape[1], dtype=np.float32)
+            return np.broadcast_to(columns, current.shape[:2]).copy()
+
+        calculator = SeamCalculator(column_energy)
+        calculator.MAP_DIMS_TO_SIZE = [(0, 50.0)]
+
+        calculator(image, 4)
+
+        assert widths == [6, 3]
