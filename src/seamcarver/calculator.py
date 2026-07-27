@@ -14,17 +14,9 @@ from typing import SupportsIndex
 import numpy as np
 import numpy.typing as npt
 
-# import project specific packages
+from ._search import SeamNotFoundError, find_seam
 from ._validation import validate_num_seams
 from .methods import EnergyMethod, GradientEnergy
-
-
-# Exceptions
-class SeamExhausedException(Exception):
-    """Exception raised when no more seams can be found in the image."""
-
-    def __init__(self, message: str = "No more seams can be found.") -> None:
-        super().__init__(message)
 
 
 # Main class for seam carving calculations
@@ -167,12 +159,12 @@ class SeamCalculator:
         while n < min(batch_size, num_seams):
             # Try to compute valid seams in the current batch
             try:
-                costs_i = self._compute_costs(energy)
-                seams_i = self._compute_seams(energy, costs_i)
+                seams_i = find_seam(energy)
                 seams = seams | seams_i
+                energy[seams_i] = np.inf
                 # Update the number of seams found
                 n += 1
-            except SeamExhausedException:
+            except SeamNotFoundError:
                 break
 
         return n, seams  # return the number of seams found and their mask
@@ -197,64 +189,3 @@ class SeamCalculator:
         if not np.isfinite(normalized_energy).all():
             raise ValueError("Energy map must contain only finite float32 values.")
         return normalized_energy
-
-    def _compute_costs(
-        self, energy: npt.NDArray[np.float32]
-    ) -> npt.NDArray[np.float64]:
-        """Compute cumulative cost table using dynamic programming."""
-
-        # Initialize the costs table with the energy values
-        costs = energy.astype(np.float64, copy=True)
-        height = energy.shape[0]
-        # Iterate through each row to compute cumulative costs
-        for i in range(1, height):
-            prev = costs[i - 1]
-            curr = costs[i]
-            # Update the interiors and boundaries with minimum costs
-            curr[1:-1] += np.minimum(np.minimum(prev[:-2], prev[1:-1]), prev[2:])
-            curr[0] += min(prev[0], prev[1])
-            curr[-1] += min(prev[-1], prev[-2])
-
-        return costs  # return costs table
-
-    def _compute_seams(
-        self,
-        energy: npt.NDArray[np.float32],
-        costs: npt.NDArray[np.float64],
-    ) -> npt.NDArray[np.bool_]:
-        """Backtrack through cost table to find minimum energy seam."""
-
-        # Initialize the seams mask with the same shape as energy
-        seams = np.zeros(energy.shape, dtype=bool)
-
-        # Find the index of the minimum cost pixel in the last row
-        prev = int(np.argmin(costs[-1]))
-
-        # If the minimum cost is infinite, return an empty seam
-        if costs[-1, prev] == np.inf:
-            raise SeamExhausedException("No valid starting point found.")
-
-        # Set the last index of the seam to the minimum
-        seams[-1, prev] = True
-        energy[-1, prev] = np.inf
-
-        height, width = energy.shape[:2]
-        # Backtrack to find the seam path
-        for i in range(height - 2, -1, -1):
-            # Find the bounds and indices for the current seam
-            left_bound = max(0, prev - 1)
-            right_bound = min(width, prev + 2)
-            min_index = int(np.argmin(costs[i, left_bound:right_bound])) + left_bound
-
-            # If the cost is infinite, return an empty seam
-            if costs[i, min_index] == np.inf:
-                raise SeamExhausedException("No valid seam found.")
-
-            # Update the seam
-            seams[i, min_index] = True
-            energy[i, min_index] = np.inf
-
-            # Update the previous column index for the next iteration
-            prev = min_index
-
-        return seams  # return seams mask
