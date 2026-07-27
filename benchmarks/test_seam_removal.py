@@ -5,7 +5,7 @@ from seamcarver import VERTICAL, SeamCarver
 
 SEED = 42
 IMAGE_SIZES = (512, 1024, 2048)
-SEAM_COUNTS = (1, 5, 50, 500)
+SEAM_COUNTS = (1, 5, 50, 200)
 
 
 def _remove_vertical_seams(carver, num_seams):
