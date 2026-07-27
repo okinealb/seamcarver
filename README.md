@@ -29,7 +29,6 @@ Detailed engineering documentation is available in the [`docs/`](docs/) director
 Seam carving finds connected pixel paths with minimal cumulative energy and removes them iteratively to resize images while preserving salient structures. This repository provides:
 
 - A functional Python API for integration into scripts and applications
-- A stateful `SeamCarver` compatibility interface
 - A CLI (`seamcarver`) for direct image processing workflows
 - Extensible energy-method abstractions for algorithm experimentation
 - A dynamic-programming seam computation pipeline that recalculates energy after
@@ -118,21 +117,19 @@ preview = resize_plan.highlight()
 result = resize_plan.carve()
 ```
 
-The stateful class remains available during the beta API migration:
+For a sequence of operations, pass each result into the next call:
 
 ```python
-carver = seamcarver.SeamCarver("examples/medium.jpg")
-carver.resize(height=240, width=400)
-result = carver.image
+image = seamcarver.resize("examples/medium.jpg", height=260, width=450)
+image = seamcarver.resize(image, height=240, width=400)
 ```
+
+Older beta revisions exposed a mutable `SeamCarver` class. It has been removed
+in favor of explicit input-to-output operations.
 
 ## Architecture
 
-### `SeamCarver` (`seamcarver/core.py`)
-
-Compatibility interface for stateful image operations, saving, and display.
-
-### Functional API (`seamcarver/core.py`)
+### Public operations (`seamcarver/core.py`)
 
 `resize()` returns an owned transformed image. `plan()` computes reusable seam
 decisions for matching carved and highlighted outputs.
@@ -211,8 +208,10 @@ and comparison procedure.
   Energy abstraction (`EnergyMethod`) and method implementations.
 - `seamcarver/cli.py`  
   Command-line interface and operational logging.
-- `seamcarver/constants.py`, `seamcarver/utils.py`, `seamcarver/logger.py`  
-  Shared constants, helper utilities, and logging configuration.
+- `seamcarver/_image.py`, `seamcarver/_validation.py`
+  Internal image normalization and public-parameter validation.
+- `seamcarver/logger.py`
+  CLI logging configuration.
 - `tests/`  
   Unit/integration tests for API and CLI behavior.
 - `benchmarks/`  

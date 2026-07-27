@@ -1,99 +1,90 @@
-# Algorithm Overview
+# Algorithm overview
 
-This document explains how seam selection and seam removal are implemented in the current codebase.
+## Goal
 
-## 1. Goal
+Seam carving removes connected, low-energy pixel paths while trying to preserve
+visually important content.
 
-The algorithm finds low-energy connected pixel paths (seams) and removes or highlights them while trying to preserve visually important content (`seamcarver/core.py:136-160`, `seamcarver/calculator.py:27-33`).
+## Inputs and outputs
 
-## 2. Inputs and outputs
+Public operations accept NumPy arrays, nested integer lists, Pillow images, and
+filesystem paths. `normalize_image()` converts them into owned RGB `uint8`
+arrays shaped `(H, W, 3)`.
 
-- **Input image**: `SeamCarver` owns an RGB `uint8` NumPy array with shape
-  `(H, W, 3)`. NumPy inputs must already use that representation and are copied.
-  Integer nested lists are range-checked and converted. PIL images and filesystem
-  paths are converted to RGB (`src/seamcarver/_image.py`, `normalize_image`).
-- **Control inputs**:
-  - operation (`resize`, `remove`, `highlight`) (`seamcarver/core.py:125-160`)
-  - direction (`VERTICAL` or `HORIZONTAL`) (`seamcarver/constants.py:10-13`)
-  - number of seams (`num_seams`), which must satisfy
-    `1 <= num_seams < oriented dimension`
-- **Output from seam finder**: boolean seam mask `(H, W)` where `True` denotes seam pixels (`seamcarver/calculator.py:93-95`, `123-127`).
+`resize()` accepts target height and width. `plan()` accepts the same inputs and
+returns a `ResizePlan` that can produce:
 
-## 3. Direction handling
+- an owned carved image from `carve()`
+- an owned source-sized preview from `highlight()`
 
-Only vertical seam logic is implemented in the calculator. `SeamCarver` creates a
-local transposed view for horizontal requests and stores the completed result only
-after processing succeeds (`src/seamcarver/core.py`, `_orient_image`).
+Targets may shrink or preserve each dimension. Enlargement remains deferred.
 
-## 4. Energy-map generation
+## Energy maps
 
-`SeamCalculator` delegates energy computation to an injected callable. Plain
-functions, callable objects, and `EnergyMethod` subclasses share the same
-runtime validation.
-It validates the returned shape, dtype, and values, then copies the map to
-`float32` before seam extraction.
+`SeamCalculator` delegates pixel-energy calculation to a compatible callable.
+The returned value must be a finite, real, two-dimensional NumPy array matching
+the current image height and width. The calculator copies it to `float32`.
 
-Built-in energy methods:
+Built-in methods are:
 
-1. **GradientEnergy**: interior gradient magnitude + fixed border energy (`seamcarver/methods/gradient.py:23-31`, `seamcarver/constants.py:14-15`)
-2. **SobelEnergy**: grayscale conversion + Sobel gradients (`seamcarver/methods/sobel.py:26-30`)
-3. **LaplacianEnergy**: grayscale conversion + Laplacian magnitude (`seamcarver/methods/laplacian.py:26-29`)
+1. `GradientEnergy`, which computes interior gradient magnitude and assigns a
+   fixed border energy
+2. `SobelEnergy`, which applies Sobel operators to a grayscale image
+3. `LaplacianEnergy`, which computes grayscale Laplacian magnitude
 
-## 5. Dynamic-programming cumulative costs
+## One-seam search
 
-For each candidate seam, cumulative minimum costs are computed row-by-row:
+`cumulative_costs()` in `src/seamcarver/_search.py` creates a `float64` cost
+table from the `float32` energy map. The wider accumulator prevents finite
+per-pixel values from overflowing during path accumulation.
 
-- Initialize a `float64` cost table from the `float32` energy map so path
-  accumulation remains finite (`src/seamcarver/calculator.py`, `_compute_costs`)
-- For each row, add the minimum reachable predecessor from the previous row (`seamcarver/calculator.py:192-199`)
-  - interior: min of left-up, up, right-up
-  - boundaries: min of valid neighbors
+For each row, the algorithm adds the cheapest reachable predecessor:
 
-This produces a cumulative table where the minimum in the last row is the seam endpoint (`seamcarver/calculator.py:210-212`).
+- interior pixels consider left-up, up, and right-up
+- edge pixels consider only valid neighbors
 
-## 6. Seam backtracking
+`find_seam()` starts at the cheapest endpoint in the final row and backtracks
+through the same predecessor neighborhood. It returns a boolean mask containing
+one pixel per row. If no finite path exists, it raises `SeamNotFoundError`.
 
-Backtracking starts from the minimum-cost pixel in the last row and walks upward by choosing the minimum predecessor in `[prev-1, prev, prev+1]` (`seamcarver/calculator.py:223-227`).
+For an image of height `H` and width `W`, energy calculation and cumulative-cost
+construction are typically `O(HW)`. Backtracking is `O(H)`.
 
-During backtracking:
+## Repeated seam planning
 
-- seam pixels are marked in a boolean mask (`seamcarver/calculator.py:208`, `218`, `234`)
-- if no valid finite path exists, `SeamNotFoundError` is raised
+`find_seams()` in `src/seamcarver/_planner.py` owns repeated search:
 
-## 7. Multi-seam extraction flow
+1. Copy the image and create a flat source-index map.
+2. Compute energy for the current image.
+3. Find and remove one seam from the image and index map.
+4. Repeat until the requested count is reached.
+5. Reconstruct a boolean mask in the source image's coordinates.
 
-For a call requesting `num_seams`:
+Public operations use a batch size of one, so energy is recomputed after every
+removal. The private batch-size parameter remains available for controlled
+performance experiments.
 
-1. The planner copies the image and initializes a source-index map.
-2. It computes energy for the current image and finds one seam.
-3. It removes that seam from both the image and index map.
-4. It repeats energy computation and removal until it reaches the requested count.
-5. It reconstructs the final mask in the source image's coordinates.
+## Width and height reduction
 
-The planner retains a private batch-size parameter for performance experiments.
-Public operations use a batch size of one so their results match repeated
-single-seam removal.
+`build_plan()` in `src/seamcarver/_plan.py` reduces width first. It applies each
+seam mask to both the working image and its source-coordinate map.
 
-## 8. Applying seams to user operations
+To reduce height, it transposes the current image and coordinate map, reuses the
+vertical seam logic, then restores the original orientation. Removed source
+indices from both directions populate one source-sized mask.
 
-- **Functional resize**: `resize()` returns the carved image without mutating the
-  source input.
-- **Plan**: `plan()` performs seam search once; `ResizePlan.carve()` and
-  `ResizePlan.highlight()` return independent images from the same decisions.
-- **Remove**: drop seam pixels and reshape to reduce width by seam count (`seamcarver/core.py:145-148`).
-- **Highlight**: color seam pixels without removing them (`seamcarver/core.py:159-160`, `seamcarver/constants.py:16-17`).
-- **Resize**: shrink one or both dimensions, or leave them unchanged. Enlargement
-  is rejected until seam addition is implemented. A failed resize restores the
-  original image.
-- **Add**: explicitly raises `NotImplementedError`; seam addition remains deferred.
+The CLI maps directional commands onto this target-based model:
 
-## 9. Complexity summary
+- vertical removal reduces the target width
+- horizontal removal reduces the target height
+- highlight uses the same targets but returns the plan preview
 
-For one seam on an image of height `H` and width `W`:
+## Result invariants
 
-- energy computation: method-dependent, typically `O(HW)` (`seamcarver/methods/gradient.py:23-31`, `seamcarver/methods/sobel.py:26-30`, `seamcarver/methods/laplacian.py:26-29`)
-- cumulative costs: `O(HW)` (`seamcarver/calculator.py:192-199`)
-- backtracking: `O(H)` (`seamcarver/calculator.py:223-239`)
-
-For `k` seams, the default behavior repeats energy computation, seam search, and
-image compaction `k` times.
+- A vertical seam contains one pixel per row.
+- Adjacent seam pixels differ by at most one column.
+- Distinct seams in one result do not overlap.
+- Removing `n` vertical seams preserves height and reduces width by `n`.
+- Height reduction satisfies the corresponding transposed rules.
+- The source input is not mutated.
+- `carve()` and `highlight()` use the same recorded seam decisions.
