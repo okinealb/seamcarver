@@ -14,7 +14,7 @@ from typing import SupportsIndex
 import numpy as np
 import numpy.typing as npt
 
-from ._search import SeamNotFoundError, find_seam
+from ._planner import find_seams
 from ._validation import validate_num_seams
 from .methods import EnergyMethod, GradientEnergy
 
@@ -45,16 +45,13 @@ class SeamCalculator:
         transpose the image before passing to the calculator.
     """
 
-    # Class constants
-    MAP_DIMS_TO_SIZE: list[tuple[int, float]] = [  # (width, percentage)
-        (1000, 12.5),  # 12.5% per batch for images >= 1000 pixels
-        (500, 10.0),  # 10.0% per batch for images >= 500 pixels
-        (100, 8.33),  # ~8.3% per batch for images >= 100 pixels
-        (20, 6.67),  # ~6.7% per batch for images >= 0 pixels
-        (0, 5.00),  #  5.0% per batch for images < 20 pixels
+    MAP_DIMS_TO_SIZE: list[tuple[int, float]] = [
+        (1000, 12.5),
+        (500, 10.0),
+        (100, 8.33),
+        (20, 6.67),
+        (0, 5.0),
     ]
-    """list[tuple[int, int]]: Rules for batch size based on image dimensions.
-        Each tuple contains (minimum dimension, batch size)."""
 
     # Class attributes
     method: EnergyMethod
@@ -93,34 +90,13 @@ class SeamCalculator:
             >>> assert mask.sum() == image.shape[0]  # One pixel per row
         """
 
-        H, W = image.shape[:2]
-        num_seams = validate_num_seams(num_seams, W)
-
-        # Retain a copy of the original image to avoid modifying it
-        image = image.copy()
-
-        # The kept pixels, traced through batches and reshaping
-        kept: npt.NDArray[np.signedinteger] = np.arange(H * W)
-
-        # Determine the batch size based on the image width
-        batch_size = self._get_batch_size(W)
-
-        # Process the seams in batches
-        while num_seams > 0:
-            # TODO: SET BATCH_SIZE TO NUM_SEAMS FOR EFFICIENCY???
-            n, seams = self._process(image, num_seams, batch_size)
-            if n == 0:
-                raise RuntimeError("Seam extraction made no progress.")
-            num_seams = num_seams - n
-            image = image[~seams].reshape(H, -1, 3)
-            # Update the kept indices based on the seams found
-            kept = kept[~seams.flatten()]
-
-        # Construct the boolean mask of the seams
-        mask = np.zeros(H * W, dtype=bool)
-        mask[kept] = True
-
-        return (~mask).reshape(H, W)  # return the boolean mask of seams
+        num_seams = validate_num_seams(num_seams, image.shape[1])
+        return find_seams(
+            image,
+            num_seams,
+            self._compute_energy,
+            self.MAP_DIMS_TO_SIZE,
+        )
 
     def mask_to_index(
         self, mask: npt.NDArray[np.bool_]
@@ -134,40 +110,6 @@ class SeamCalculator:
             1D array of indices for seam pixels.
         """
         return np.flatnonzero(mask)
-
-    def _get_batch_size(self, width: int) -> int:
-        """Calculate optimal batch size based on image width."""
-        # Use the predefined mapping to get the batch size
-        for min_width, percent in self.MAP_DIMS_TO_SIZE:
-            if width >= min_width:
-                return int(max(1, width * percent // 100))
-        return 1
-
-    def _process(
-        self,
-        image: npt.NDArray[np.uint8],
-        num_seams: int,
-        batch_size: int,
-    ) -> tuple[int, npt.NDArray[np.bool_]]:
-        """Process as many seams as possible in the current batch."""
-
-        # Initialize the seams mask with the image shape
-        seams = np.zeros(image.shape[:2], dtype=bool)
-        energy = self._compute_energy(image)
-        n = 0
-
-        while n < min(batch_size, num_seams):
-            # Try to compute valid seams in the current batch
-            try:
-                seams_i = find_seam(energy)
-                seams = seams | seams_i
-                energy[seams_i] = np.inf
-                # Update the number of seams found
-                n += 1
-            except SeamNotFoundError:
-                break
-
-        return n, seams  # return the number of seams found and their mask
 
     def _compute_energy(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.float32]:
         """Compute energy map using configured energy method."""
