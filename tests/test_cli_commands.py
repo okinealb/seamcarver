@@ -3,7 +3,6 @@ import pytest
 from PIL import Image
 
 from seamcarver.cli import main
-from seamcarver.constants import HIGHLIGHT_COLOR
 
 
 def test_resize_writes_requested_dimensions(capsys, input_image_path, output_path):
@@ -112,7 +111,7 @@ def test_highlight_writes_colored_seams(
     output_path,
     monkeypatch,
 ):
-    monkeypatch.setattr("seamcarver.cli.SeamCarver.display", lambda self: None)
+    monkeypatch.setattr("PIL.Image.Image.show", lambda self: None)
     args = [
         input_image_path,
         "highlight",
@@ -133,4 +132,4 @@ def test_highlight_writes_colored_seams(
     with Image.open(output_path) as output:
         pixels = np.asarray(output)
         assert output.size == (7, 6)
-        assert np.all(pixels == HIGHLIGHT_COLOR, axis=-1).sum() == expected_pixels
+        assert np.all(pixels == (255, 0, 0), axis=-1).sum() == expected_pixels

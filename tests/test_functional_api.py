@@ -6,6 +6,18 @@ import pytest
 from seamcarver import ResizePlan, plan, resize
 
 
+class FailingEnergy:
+    def __init__(self, fail_on_call):
+        self.calls = 0
+        self.fail_on_call = fail_on_call
+
+    def __call__(self, image):
+        self.calls += 1
+        if self.calls == self.fail_on_call:
+            raise RuntimeError("energy calculation failed")
+        return np.zeros(image.shape[:2], dtype=np.float32)
+
+
 class TestResize:
     def test_returns_owned_image_without_mutating_input(self):
         image = np.arange(4 * 5 * 3, dtype=np.uint8).reshape(4, 5, 3)
@@ -27,6 +39,15 @@ class TestResize:
 
         assert np.array_equal(result, resize_plan.carve())
 
+    def test_matches_width_first_sequential_resize(self):
+        image = np.arange(4 * 5 * 3, dtype=np.uint8).reshape(4, 5, 3)
+
+        result = resize(image, height=3, width=3)
+        width_first = resize(image, height=4, width=3)
+        width_first = resize(width_first, height=3, width=3)
+
+        assert np.array_equal(result, width_first)
+
     def test_same_size_returns_independent_image(self):
         image = np.zeros((2, 3, 3), dtype=np.uint8)
 
@@ -45,6 +66,45 @@ class TestResize:
 
         with pytest.raises(TypeError):
             resize(image, 2, 2)
+
+    @pytest.mark.parametrize(
+        ("height", "width", "exception"),
+        [
+            (0, 2, ValueError),
+            (2, 0, ValueError),
+            (4, 2, ValueError),
+            (2, 4, ValueError),
+            (2.0, 2, TypeError),
+            (2, True, TypeError),
+        ],
+        ids=[
+            "zero-height",
+            "zero-width",
+            "larger-height",
+            "larger-width",
+            "float-height",
+            "bool-width",
+        ],
+    )
+    def test_rejects_invalid_target(self, height, width, exception):
+        image = np.zeros((3, 3, 3), dtype=np.uint8)
+
+        with pytest.raises(exception):
+            resize(image, height=height, width=width)
+
+    def test_failure_does_not_mutate_input(self):
+        image = np.arange(3 * 3 * 3, dtype=np.uint8).reshape(3, 3, 3)
+        original = image.copy()
+
+        with pytest.raises(RuntimeError, match="energy calculation failed"):
+            resize(
+                image,
+                height=2,
+                width=2,
+                method=FailingEnergy(fail_on_call=2),
+            )
+
+        assert np.array_equal(image, original)
 
 
 class TestPlan:

@@ -2,24 +2,23 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from seamcarver.core import SeamCarver
+from seamcarver._image import normalize_image
 
 
 class TestArrayInput:
     def test_preserves_shape_and_dtype(self, sample_image):
-        carver = SeamCarver(sample_image)
+        normalized = normalize_image(sample_image)
 
-        assert carver.image.shape == sample_image.shape
-        assert carver.image.dtype == np.uint8
-        assert isinstance(carver.image, np.ndarray)
-        assert carver.verbose is False
+        assert normalized.shape == sample_image.shape
+        assert normalized.dtype == np.uint8
+        assert isinstance(normalized, np.ndarray)
 
     def test_is_copied(self, sample_image):
-        carver = SeamCarver(sample_image)
+        normalized = normalize_image(sample_image)
 
         sample_image[0, 0] = [1, 2, 3]
 
-        assert not np.array_equal(carver.image[0, 0], sample_image[0, 0])
+        assert not np.array_equal(normalized[0, 0], sample_image[0, 0])
 
     @pytest.mark.parametrize(
         "image",
@@ -42,15 +41,15 @@ class TestArrayInput:
     )
     def test_rejects_invalid_values(self, image):
         with pytest.raises(ValueError):
-            SeamCarver(image)
+            normalize_image(image)
 
 
 class TestListInput:
     def test_becomes_rgb_uint8(self, sample_image):
-        carver = SeamCarver(sample_image.tolist())
+        normalized = normalize_image(sample_image.tolist())
 
-        assert carver.image.shape == sample_image.shape
-        assert carver.image.dtype == np.uint8
+        assert normalized.shape == sample_image.shape
+        assert normalized.dtype == np.uint8
 
     @pytest.mark.parametrize(
         "image",
@@ -65,15 +64,15 @@ class TestListInput:
     )
     def test_rejects_invalid_values(self, image):
         with pytest.raises(ValueError):
-            SeamCarver(image)
+            normalize_image(image)
 
 
 @pytest.mark.parametrize("mode", ["L", "RGBA"])
 def test_pil_input_becomes_rgb_uint8(mode):
-    carver = SeamCarver(Image.new(mode, (3, 2)))
+    normalized = normalize_image(Image.new(mode, (3, 2)))
 
-    assert carver.image.shape == (2, 3, 3)
-    assert carver.image.dtype == np.uint8
+    assert normalized.shape == (2, 3, 3)
+    assert normalized.dtype == np.uint8
 
 
 class TestPathInput:
@@ -85,23 +84,23 @@ class TestPathInput:
         Image.fromarray(sample_image).save(image_path)
         image_input = image_path if use_path_object else str(image_path)
 
-        carver = SeamCarver(image_input)
+        normalized = normalize_image(image_input)
 
-        assert carver.image.shape == sample_image.shape
-        assert carver.image.dtype == np.uint8
+        assert normalized.shape == sample_image.shape
+        assert normalized.dtype == np.uint8
 
     def test_missing_raises_file_not_found(self, tmp_path):
         with pytest.raises(FileNotFoundError):
-            SeamCarver(str(tmp_path / "missing.png"))
+            normalize_image(str(tmp_path / "missing.png"))
 
     def test_undecodable_raises_value_error(self, tmp_path):
         image_path = tmp_path / "invalid.png"
         image_path.write_bytes(b"not an image")
 
         with pytest.raises(ValueError, match="Could not decode image"):
-            SeamCarver(str(image_path))
+            normalize_image(str(image_path))
 
 
 def test_unsupported_input_raises_type_error():
     with pytest.raises(TypeError):
-        SeamCarver(object())
+        normalize_image(object())

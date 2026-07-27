@@ -3,7 +3,6 @@ import pytest
 from PIL import Image
 
 from seamcarver.calculator import SeamCalculator
-from seamcarver.core import SeamCarver
 
 
 @pytest.fixture
@@ -21,11 +20,6 @@ def sample_image():
 @pytest.fixture
 def calculator():
     return SeamCalculator()
-
-
-@pytest.fixture
-def carver(sample_image):
-    return SeamCarver(sample_image)
 
 
 @pytest.fixture

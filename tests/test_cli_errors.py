@@ -52,7 +52,7 @@ def test_unexpected_error_controls_traceback(
     def fail_resize(*args, **kwargs):
         raise RuntimeError("resize failed")
 
-    monkeypatch.setattr("seamcarver.cli.SeamCarver.resize", fail_resize)
+    monkeypatch.setattr("seamcarver.cli.resize", fail_resize)
     args = [input_image_path]
     if verbose:
         args.append("--verbose")
@@ -72,7 +72,7 @@ def test_keyboard_interrupt_exits_130(capsys, input_image_path, monkeypatch):
     def interrupt_resize(*args, **kwargs):
         raise KeyboardInterrupt
 
-    monkeypatch.setattr("seamcarver.cli.SeamCarver.resize", interrupt_resize)
+    monkeypatch.setattr("seamcarver.cli.resize", interrupt_resize)
 
     with pytest.raises(SystemExit) as exc_info:
         main([input_image_path, "resize", "4", "5"])
