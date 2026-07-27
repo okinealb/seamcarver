@@ -3,7 +3,6 @@ A command-line interface for the seam carving image processing tool.
 
 This module provides a command-line interface for the seam carving tool,
 allowing users to highlight, remove, and display seams in images.
-It also supports an interactive mode for easier use.
 """
 
 # Import standard library packages
@@ -11,10 +10,13 @@ import argparse as ap
 import logging
 from typing import Sequence
 
-from .constants import HIGHLIGHT_COLOR, HORIZONTAL, VERTICAL
+from PIL import Image
 
 # Import project-specific packages
-from .core import SeamCarver
+from ._image import normalize_image
+from ._plan import DEFAULT_HIGHLIGHT_COLOR
+from ._validation import validate_num_seams
+from .core import plan, resize
 from .logger import setup_cli_logging
 from .methods import SobelEnergy
 
@@ -109,7 +111,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "--rgb",
         nargs=3,
         type=int,
-        default=HIGHLIGHT_COLOR,
+        default=DEFAULT_HIGHLIGHT_COLOR,
         help="Color to highlight pixels in, as a tuple in RGB format.",
         metavar=("R", "G", "B"),
     )
@@ -126,38 +128,58 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     try:
         logger.info(f"Loading image from {args.input}...")
-        carver = SeamCarver(args.input, verbose=args.verbose, method=SobelEnergy())
-        logger.debug(f"Image loaded with shape {carver.shape}.")
+        image = normalize_image(args.input)
+        logger.debug(f"Image loaded with shape {image.shape}.")
+        method = SobelEnergy()
 
         if args.command == "resize":
             logger.info(f"Resizing image to {args.height}x{args.width}...")
-            carver.resize(height=args.height, width=args.width)
+            result = resize(
+                image,
+                height=args.height,
+                width=args.width,
+                method=method,
+            )
             logger.info("Image resized successfully.")
 
-        elif args.command == "remove":
-            direction = VERTICAL if args.direction == "vertical" else HORIZONTAL
+        else:
+            height, width = image.shape[:2]
+            if args.direction == "vertical":
+                count = validate_num_seams(args.count, width)
+                width -= count
+            else:
+                count = validate_num_seams(args.count, height)
+                height -= count
 
-            logger.info(f"Removing {args.count} seams in {args.direction} direction...")
-            carver.remove(direction=direction, num_seams=args.count)
-            logger.info("Seams removed successfully.")
+            if args.command == "remove":
+                logger.info(
+                    f"Removing {args.count} seams in {args.direction} direction..."
+                )
+            else:
+                logger.info(
+                    f"Highlighting {args.count} seams in "
+                    f"{args.direction} direction..."
+                )
 
-        elif args.command == "highlight":
-            direction = VERTICAL if args.direction == "vertical" else HORIZONTAL
-
-            logger.info(
-                f"Highlighting {args.count} seams in {args.direction} direction..."
+            resize_plan = plan(
+                image,
+                height=height,
+                width=width,
+                method=method,
             )
-            carver.image = carver.highlight(
-                direction=direction, num_seams=args.count, color=args.rgb
-            )
-            logger.info("Seams highlighted successfully.")
-            logger.debug("Displaying highlighted image...")
-            carver.display()
-            logger.debug("Image display completed.")
+            if args.command == "remove":
+                result = resize_plan.carve()
+                logger.info("Seams removed successfully.")
+            else:
+                result = resize_plan.highlight(args.rgb)
+                logger.info("Seams highlighted successfully.")
+                logger.debug("Displaying highlighted image...")
+                Image.fromarray(result).show()
+                logger.debug("Image display completed.")
 
         if args.output is not None:
             logger.info(f"Saving output image to {args.output}...")
-            carver.save(output_path=args.output)
+            Image.fromarray(result).save(args.output)
             logger.info("Output image saved successfully.")
     except KeyboardInterrupt:
         logger.warning("Operation cancelled by user.")

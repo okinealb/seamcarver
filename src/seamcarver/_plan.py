@@ -9,7 +9,8 @@ import numpy.typing as npt
 
 from ._validation import validate_color
 from .calculator import SeamCalculator
-from .constants import HIGHLIGHT_COLOR
+
+DEFAULT_HIGHLIGHT_COLOR = (255, 0, 0)
 
 
 @dataclass(eq=False, frozen=True, repr=False, slots=True)
@@ -57,7 +58,7 @@ class ResizePlan:
 
     def highlight(
         self,
-        color: Sequence[SupportsIndex] = HIGHLIGHT_COLOR,
+        color: Sequence[SupportsIndex] = DEFAULT_HIGHLIGHT_COLOR,
     ) -> npt.NDArray[np.uint8]:
         """Return an owned source image with planned removals colored.
 
