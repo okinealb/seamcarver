@@ -41,6 +41,36 @@ def test_processing_error_does_not_save(command, capsys, input_image_path, outpu
     assert not output_path.exists()
 
 
+def test_existing_output_is_not_overwritten(
+    capsys, input_image_path, output_path, monkeypatch
+):
+    original = b"existing output"
+    output_path.write_bytes(original)
+
+    def fail_resize(*args, **kwargs):
+        pytest.fail("Resize started before output validation")
+
+    monkeypatch.setattr("seamcarver.cli.resize", fail_resize)
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(
+            [
+                input_image_path,
+                "resize",
+                "4",
+                "5",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+    captured = capsys.readouterr()
+
+    assert exc_info.value.code == 1
+    assert "Output path already exists" in captured.err
+    assert output_path.read_bytes() == original
+
+
 @pytest.mark.parametrize(
     ("verbose", "shows_traceback"),
     [(False, False), (True, True)],
