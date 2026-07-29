@@ -2,12 +2,14 @@
 A command-line interface for the seam carving image processing tool.
 
 This module provides a command-line interface for the seam carving tool,
-allowing users to highlight, remove, and display seams in images.
+allowing users to resize images, remove seams, and save seam previews.
 """
 
 # Import standard library packages
 import argparse as ap
 import logging
+from pathlib import Path
+from time import perf_counter
 from typing import Sequence
 
 from PIL import Image
@@ -18,7 +20,13 @@ from ._plan import DEFAULT_HIGHLIGHT_COLOR
 from ._validation import validate_num_seams
 from .core import plan, resize
 from .logger import setup_cli_logging
-from .methods import SobelEnergy
+from .methods import EnergyMethod, GradientEnergy, LaplacianEnergy, SobelEnergy
+
+_ENERGY_METHODS: dict[str, type[EnergyMethod]] = {
+    "gradient": GradientEnergy,
+    "sobel": SobelEnergy,
+    "laplacian": LaplacianEnergy,
+}
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -29,7 +37,15 @@ def main(argv: Sequence[str] | None = None) -> None:
         "--output",
         type=str,
         default=None,
-        help="Path to save the output image after seam carving.",
+        help="Output path. A descriptive name is used when omitted.",
+    )
+
+    energy_parser = ap.ArgumentParser(add_help=False)
+    energy_parser.add_argument(
+        "--energy",
+        choices=_ENERGY_METHODS,
+        default="gradient",
+        help="Energy method used to rank pixels.",
     )
 
     direction_parser = ap.ArgumentParser(add_help=False)
@@ -85,7 +101,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     resize_parser = subparsers.add_parser(
         "resize",
         help="Resize the image by removing seams.",
-        parents=[save_parser],
+        parents=[save_parser, energy_parser],
         formatter_class=ap.ArgumentDefaultsHelpFormatter,
     )
     resize_parser.add_argument("height", type=int, help="Output height.")
@@ -95,7 +111,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     subparsers.add_parser(
         "remove",
         help="Remove seams from the image.",
-        parents=[save_parser, direction_parser],
+        parents=[save_parser, direction_parser, energy_parser],
         formatter_class=ap.ArgumentDefaultsHelpFormatter,
     )
 
@@ -103,7 +119,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     highlight_parser = subparsers.add_parser(
         "highlight",
         help="Highlight seams in the image.",
-        parents=[save_parser, direction_parser],
+        parents=[save_parser, direction_parser, energy_parser],
         formatter_class=ap.ArgumentDefaultsHelpFormatter,
     )
     highlight_parser.add_argument(
@@ -130,7 +146,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         logger.info(f"Loading image from {args.input}...")
         image = normalize_image(args.input)
         logger.debug(f"Image loaded with shape {image.shape}.")
-        method = SobelEnergy()
+        output_path = _get_output_path(args)
+        method = _ENERGY_METHODS[args.energy]()
+        started = perf_counter()
 
         if args.command == "resize":
             logger.info(f"Resizing image to {args.height}x{args.width}...")
@@ -168,19 +186,17 @@ def main(argv: Sequence[str] | None = None) -> None:
                 method=method,
             )
             if args.command == "remove":
-                result = resize_plan.carve()
+                result = resize_plan.result()
                 logger.info("Seams removed successfully.")
             else:
-                result = resize_plan.highlight(args.rgb)
+                result = resize_plan.preview(args.rgb)
                 logger.info("Seams highlighted successfully.")
-                logger.debug("Displaying highlighted image...")
-                Image.fromarray(result).show()
-                logger.debug("Image display completed.")
 
-        if args.output is not None:
-            logger.info(f"Saving output image to {args.output}...")
-            Image.fromarray(result).save(args.output)
-            logger.info("Output image saved successfully.")
+        elapsed = perf_counter() - started
+        logger.info(f"Processing completed in {elapsed:.3f} seconds.")
+        logger.info(f"Saving output image to {output_path}...")
+        Image.fromarray(result).save(output_path)
+        logger.info(f"Output image saved to {output_path}.")
     except KeyboardInterrupt:
         logger.warning("Operation cancelled by user.")
         raise SystemExit(130) from None
@@ -196,7 +212,10 @@ def handle_error(
 ) -> None:
     """Handle errors with logger messages."""
 
-    if isinstance(error, FileNotFoundError):
+    if isinstance(error, FileExistsError):
+        logger.error(str(error))
+        logger.error("Choose another output path and try again.")
+    elif isinstance(error, FileNotFoundError):
         logger.error(f"File not found: {error.filename}")
         logger.error("Please check the file path and try again.")
     elif isinstance(error, PermissionError):
@@ -220,6 +239,26 @@ def handle_error(
 
     if verbose:
         logger.debug("Error details:", exc_info=error)
+
+
+def _get_output_path(args: ap.Namespace) -> Path:
+    """Return an unused explicit or derived output path."""
+    if args.output is not None:
+        output_path = Path(args.output)
+    else:
+        input_path = Path(args.input)
+        suffix = input_path.suffix or ".png"
+        if args.command == "resize":
+            descriptor = f"resized_{args.width}x{args.height}"
+        elif args.command == "remove":
+            descriptor = f"removed_{args.count}_{args.direction}"
+        else:
+            descriptor = f"highlighted_{args.count}_{args.direction}"
+        output_path = Path.cwd() / f"{input_path.stem}_{descriptor}{suffix}"
+
+    if output_path.exists():
+        raise FileExistsError(f"Output path already exists: {output_path}")
+    return output_path
 
 
 if __name__ == "__main__":
