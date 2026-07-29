@@ -52,11 +52,11 @@ class ResizePlan:
             self._result.shape[2],
         )
 
-    def carve(self) -> npt.NDArray[np.uint8]:
+    def result(self) -> npt.NDArray[np.uint8]:
         """Return an owned copy of the planned result."""
         return self._result.copy()
 
-    def highlight(
+    def preview(
         self,
         color: Sequence[SupportsIndex] = DEFAULT_HIGHLIGHT_COLOR,
     ) -> npt.NDArray[np.uint8]:

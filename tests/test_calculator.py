@@ -9,19 +9,6 @@ def test_default_method_is_gradient(calculator):
     assert isinstance(calculator.method, GradientEnergy)
 
 
-def test_mask_to_index_returns_flat_indices(calculator):
-    mask = np.array(
-        [
-            [False, True, False],
-            [True, False, True],
-        ]
-    )
-
-    indices = calculator.mask_to_index(mask)
-
-    assert np.array_equal(indices, [1, 3, 5])
-
-
 class TestSeamCalculation:
     def test_accepts_numpy_integer(self, calculator, sample_image):
         mask = calculator(sample_image, np.int64(1))

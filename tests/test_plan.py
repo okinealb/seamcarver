@@ -20,8 +20,8 @@ def test_preview_marks_exactly_the_pixels_missing_from_result():
     calculator = LeftEdgeCalculator()
 
     plan = build_plan(image, height=3, width=3, calculator=calculator)
-    result = plan.carve()
-    preview = plan.highlight((255, 255, 255))
+    result = plan.result()
+    preview = plan.preview((255, 255, 255))
 
     removed = np.zeros(image.shape[:2], dtype=bool)
     removed[:, :2] = True
@@ -48,12 +48,12 @@ def test_plan_owns_state_and_returns_independent_images():
     expected_result = expected_source[1:, 1:]
 
     image.fill(0)
-    result = plan.carve()
-    preview = plan.highlight((255, 255, 255))
+    result = plan.result()
+    preview = plan.preview((255, 255, 255))
     result.fill(0)
     preview.fill(0)
-    fresh_result = plan.carve()
-    fresh_preview = plan.highlight((255, 255, 255))
+    fresh_result = plan.result()
+    fresh_preview = plan.preview((255, 255, 255))
 
     assert np.array_equal(fresh_result, expected_result)
     assert np.array_equal(

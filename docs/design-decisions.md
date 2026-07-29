@@ -26,8 +26,8 @@ Tradeoff:
 object.
 
 A plan stores the source, carved result, and source-coordinate removal mask.
-This avoids repeating seam search when a caller needs both `carve()` and
-`highlight()`. Stored arrays are read-only, and each output method returns an
+This avoids repeating seam search when a caller needs both `result()` and
+`preview()`. Stored arrays are read-only, and each output method returns an
 owned copy.
 
 Tradeoff:
@@ -41,6 +41,8 @@ Tradeoff:
 
 `SeamCalculator` validates every returned energy map before search. The map must
 be a finite, real, two-dimensional numeric array matching the current image.
+The calculator and `EnergyMethod` are advanced interfaces, so they remain in
+their defining submodules rather than the top-level package.
 
 Tradeoff:
 
@@ -88,9 +90,11 @@ scope and compatibility status clear.
 
 **Decision:** Keep both an importable library and a command-line interface.
 
-The CLI owns argument parsing, paths, saving, display, logging, and exit behavior.
-It maps `resize`, `remove`, and `highlight` commands onto `resize()` and
-`plan()`. The command vocabulary remains independent from the Python API shape.
+The CLI owns argument parsing, paths, saving, logging, and exit behavior. It
+maps `resize`, `remove`, and `highlight` commands onto `resize()` and `plan()`.
+When `--output` is omitted, the CLI writes a descriptively named file in the
+current directory. It refuses to overwrite an existing path. The command
+vocabulary remains independent from the Python API shape.
 
 Tradeoff:
 

@@ -60,4 +60,4 @@ def resize(
         height=height,
         width=width,
         method=method,
-    ).carve()
+    ).result()

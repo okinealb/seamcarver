@@ -37,7 +37,7 @@ class TestResize:
         result = resize(image, height=3, width=3)
         resize_plan = plan(image, height=3, width=3)
 
-        assert np.array_equal(result, resize_plan.carve())
+        assert np.array_equal(result, resize_plan.result())
 
     def test_matches_width_first_sequential_resize(self):
         image = np.arange(4 * 5 * 3, dtype=np.uint8).reshape(4, 5, 3)
@@ -119,10 +119,10 @@ class TestPlan:
             return np.broadcast_to(columns, current.shape[:2]).copy()
 
         resize_plan = plan(image, height=3, width=2, method=left_edge_energy)
-        first_result = resize_plan.carve()
-        second_result = resize_plan.carve()
-        first_preview = resize_plan.highlight()
-        second_preview = resize_plan.highlight()
+        first_result = resize_plan.result()
+        second_result = resize_plan.result()
+        first_preview = resize_plan.preview()
+        second_preview = resize_plan.preview()
 
         assert isinstance(resize_plan, ResizePlan)
         assert repr(resize_plan) == (
@@ -155,7 +155,7 @@ class TestPlan:
             "boolean",
         ],
     )
-    def test_highlight_rejects_invalid_color(self, color, exception):
+    def test_preview_rejects_invalid_color(self, color, exception):
         resize_plan = plan(
             np.zeros((2, 3, 3), dtype=np.uint8),
             height=2,
@@ -163,4 +163,4 @@ class TestPlan:
         )
 
         with pytest.raises(exception):
-            resize_plan.highlight(color)
+            resize_plan.preview(color)

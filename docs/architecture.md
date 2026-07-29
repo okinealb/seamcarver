@@ -41,7 +41,7 @@ Neither operation mutates the caller's input.
 
 `src/seamcarver/_plan.py` owns multi-direction resize orchestration and the
 `ResizePlan` result. A plan stores independent source, result, and removal-mask
-arrays. Its internal arrays are read-only; `carve()` and `highlight()` return
+arrays. Its internal arrays are read-only; `result()` and `preview()` return
 owned copies.
 
 Width reduction runs first. Height reduction transposes the current image and
@@ -75,8 +75,8 @@ counts, and RGB colors.
 
 ### CLI boundary
 
-`src/seamcarver/cli.py` owns command parsing, filesystem input/output, display,
-logging, and user-facing failures. It maps commands onto the functional API:
+`src/seamcarver/cli.py` owns command parsing, filesystem input/output, logging,
+and user-facing failures. It maps commands onto the functional API:
 
 - `resize` passes target dimensions to `resize()`.
 - `remove` converts direction and count to target dimensions, then carves a plan.
@@ -101,12 +101,15 @@ Errors propagate without exposing a partial result or mutating the source input.
 
 ## Public boundaries
 
-The intended public surface is:
+The top-level public surface is:
 
 - `resize`
 - `plan` and `ResizePlan`
-- `SeamCalculator`
-- `EnergyMethod` and the built-in energy methods
+- the built-in energy methods
+- `__version__`
+
+`SeamCalculator` remains available from `seamcarver.calculator`, and
+`EnergyMethod` remains available from `seamcarver.methods`.
 
 The mutable `SeamCarver` compatibility class and numeric direction constants
 were retired during beta. The intended distribution remains unreleased, so the

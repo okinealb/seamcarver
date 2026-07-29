@@ -69,7 +69,8 @@ def test_file_receives_messages(capsys, input_image_path, output_path, tmp_path)
     assert str(output_path) in captured.err
     assert output_path.exists()
     assert "Loading image" in contents
-    assert "Output image saved successfully" in contents
+    assert "Processing completed in" in contents
+    assert f"Output image saved to {output_path}" in contents
 
 
 def test_setup_preserves_root_and_replaces_cli_handlers(tmp_path):
