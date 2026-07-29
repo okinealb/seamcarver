@@ -14,8 +14,8 @@ arrays shaped `(H, W, 3)`.
 `resize()` accepts target height and width. `plan()` accepts the same inputs and
 returns a `ResizePlan` that can produce:
 
-- an owned carved image from `carve()`
-- an owned source-sized preview from `highlight()`
+- an owned carved image from `result()`
+- an owned source-sized preview from `preview()`
 
 Targets may shrink or preserve each dimension. Enlargement remains deferred.
 
@@ -87,4 +87,4 @@ The CLI maps directional commands onto this target-based model:
 - Removing `n` vertical seams preserves height and reduces width by `n`.
 - Height reduction satisfies the corresponding transposed rules.
 - The source input is not mutated.
-- `carve()` and `highlight()` use the same recorded seam decisions.
+- `result()` and `preview()` use the same recorded seam decisions.

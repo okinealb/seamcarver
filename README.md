@@ -68,8 +68,11 @@ uv sync --extra dev --frozen
 ## Quick Start
 
 ```bash
-seamcarver examples/medium.jpg resize 240 400 --output resized.jpg
+seamcarver examples/medium.jpg resize 240 400
 ```
+
+This writes `medium_resized_400x240.jpg` in the current directory. Pass
+`--output` to choose a different path.
 
 ## CLI Usage
 
@@ -85,7 +88,8 @@ seamcarver <input> <command> [options]
 
 ### Common options
 
-- `-o, --output <path>` optional output path; omit it to process without saving
+- `-o, --output <path>` output path; omit it to use a descriptive filename
+- `--energy {gradient,sobel,laplacian}` pixel-energy method; defaults to gradient
 - `-v, --verbose` debug-level logs
 - `-q, --quiet` warnings/errors only
 - `-l, --log-file <path>` write logs to file
@@ -113,8 +117,8 @@ resize_plan = seamcarver.plan(
     width=400,
 )
 
-preview = resize_plan.highlight()
-result = resize_plan.carve()
+preview = resize_plan.preview()
+result = resize_plan.result()
 ```
 
 For a sequence of operations, pass each result into the next call:
@@ -138,11 +142,14 @@ decisions for matching carved and highlighted outputs.
 
 Core algorithm layer that computes energy maps, builds cumulative DP cost tables, backtracks minimum seams, and returns seam masks for removal/highlighting.
 
+This is an advanced interface. Import it from `seamcarver.calculator`.
+
 ### Energy interface + implementations (`seamcarver/methods/`)
 
 `EnergyMethod` remains an optional abstract base class. The built-in
 `GradientEnergy`, `SobelEnergy`, and `LaplacianEnergy` callables are
-interchangeable.
+interchangeable. Import `EnergyMethod` from `seamcarver.methods`; the built-in
+methods are also available from the top-level package.
 
 ### CLI layer (`seamcarver/cli.py`)
 
