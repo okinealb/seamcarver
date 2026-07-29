@@ -37,6 +37,7 @@ class SeamCalculator:
         >>> seam_mask = calculator(image, num_seams=5)
 
         >>> from seamcarver import SobelEnergy
+        >>> from seamcarver.calculator import SeamCalculator
         >>> calculator = SeamCalculator(method=SobelEnergy())
         >>> seam_mask = calculator(image, num_seams=10)
 
@@ -88,19 +89,6 @@ class SeamCalculator:
             num_seams,
             self._compute_energy,
         )
-
-    def mask_to_index(
-        self, mask: npt.NDArray[np.bool_]
-    ) -> npt.NDArray[np.signedinteger]:
-        """Convert boolean seam mask to flat array of linear indices.
-
-        Args:
-            mask: Boolean mask where True indicates seam pixels.
-
-        Returns:
-            1D array of indices for seam pixels.
-        """
-        return np.flatnonzero(mask)
 
     def _compute_energy(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.float32]:
         """Compute energy map using configured energy method."""
