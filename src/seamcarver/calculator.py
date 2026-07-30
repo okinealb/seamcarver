@@ -14,6 +14,7 @@ from typing import SupportsIndex
 import numpy as np
 import numpy.typing as npt
 
+from ._image import _validate_ndarray
 from ._planner import find_seams
 from ._validation import validate_num_seams
 from .methods import GradientEnergy
@@ -71,7 +72,7 @@ class SeamCalculator:
         positions without mutating the caller's image.
 
         Args:
-            image: Input image as numpy array (height, width, channels).
+            image: RGB uint8 NumPy array shaped (height, width, 3).
             num_seams: Number of seams to find. Must be at least one and less
                 than the image width.
 
@@ -83,6 +84,7 @@ class SeamCalculator:
             >>> assert mask.sum() == image.shape[0]  # One pixel per row
         """
 
+        _validate_ndarray(image)
         num_seams = validate_num_seams(num_seams, image.shape[1])
         return find_seams(
             image,
