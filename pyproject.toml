@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "seamcarver"
 version = "0.5.1"
-description = "A command-line Python tool for image resizing using seam carving."
+description = "A Python library and CLI for content-aware image resizing using seam carving."
 authors = [{ name = "Albert Kenneth" }]
 license = "MIT"
 license-files = ["LICENSE"]
