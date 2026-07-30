@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from seamcarver.calculator import SeamCalculator
+from seamop.calculator import SeamCalculator
 
 
 @pytest.fixture

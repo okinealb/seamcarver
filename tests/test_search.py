@@ -3,7 +3,7 @@ from itertools import product
 import numpy as np
 import pytest
 
-from seamcarver._search import SeamNotFoundError, cumulative_costs, find_seam
+from seamop._search import SeamNotFoundError, cumulative_costs, find_seam
 
 
 def minimum_seam_cost(energy):

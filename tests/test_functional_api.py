@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from seamcarver import ResizePlan, plan, resize
+from seamop import ResizePlan, plan, resize
 
 
 class FailingEnergy:

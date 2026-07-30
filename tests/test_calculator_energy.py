@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from seamcarver.calculator import SeamCalculator
+from seamop.calculator import SeamCalculator
 
 
 class FixedEnergy:

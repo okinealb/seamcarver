@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from seamcarver.cli import main
-from seamcarver.methods import GradientEnergy, LaplacianEnergy, SobelEnergy
+from seamop.cli import main
+from seamop.methods import GradientEnergy, LaplacianEnergy, SobelEnergy
 
 
 def test_resize_writes_requested_dimensions(capsys, input_image_path, output_path):
@@ -212,7 +212,7 @@ def test_resize_selects_energy_method(
         selected_method = method
         return image[:height, :width]
 
-    monkeypatch.setattr("seamcarver.cli.resize", fake_resize)
+    monkeypatch.setattr("seamop.cli.resize", fake_resize)
     args = ["resize", input_image_path, "5", "4", "--output", str(output_path)]
     if option is not None:
         args.extend(["-e", option])

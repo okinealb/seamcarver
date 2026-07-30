@@ -1,6 +1,6 @@
 import numpy as np
 
-from seamcarver._plan import build_plan
+from seamop._plan import build_plan
 
 
 class LeftEdgeCalculator:

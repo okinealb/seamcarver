@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from seamcarver import resize
+from seamop import resize
 
 SEED = 42
 IMAGE_SIZES = (512, 1024, 2048)
