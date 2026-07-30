@@ -70,6 +70,21 @@ class TestSeamCalculation:
         with pytest.raises(exception):
             calculator(sample_image, num_seams)
 
+    @pytest.mark.parametrize(
+        ("image", "exception", "message"),
+        [
+            (np.zeros((3, 3), dtype=np.uint8), ValueError, "shape"),
+            (np.zeros((3, 3, 4), dtype=np.uint8), ValueError, "3 RGB channels"),
+            (np.zeros((3, 3, 3), dtype=np.float32), ValueError, "uint8"),
+            (np.zeros((0, 3, 3), dtype=np.uint8), ValueError, "greater than zero"),
+            ([[[0, 0, 0]] * 3] * 3, TypeError, "NumPy array"),
+        ],
+        ids=["grayscale", "rgba", "float", "empty", "nested-list"],
+    )
+    def test_rejects_invalid_image(self, image, exception, message):
+        with pytest.raises(exception, match=message):
+            SeamCalculator()(image, 1)
+
     def test_preserves_input(self, calculator, sample_image):
         original = sample_image.copy()
 

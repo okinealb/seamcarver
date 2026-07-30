@@ -30,10 +30,17 @@ def normalize_image(image: ImageInput) -> ImageArray:
 
 def _from_ndarray(image: npt.NDArray[np.generic]) -> ImageArray:
     """Validate and copy an RGB uint8 array."""
+    _validate_ndarray(image)
+    return np.array(image, dtype=np.uint8, copy=True, order="C")
+
+
+def _validate_ndarray(image: object) -> None:
+    """Validate an RGB uint8 NumPy array without copying it."""
+    if not isinstance(image, np.ndarray):
+        raise TypeError("Image must be a NumPy array.")
     _validate_rgb_shape(image, "NumPy")
     if image.dtype != np.uint8:
         raise ValueError(f"NumPy image dtype must be uint8; received {image.dtype}.")
-    return np.array(image, dtype=np.uint8, copy=True, order="C")
 
 
 def _from_nested_list(image: list[Any]) -> ImageArray:
