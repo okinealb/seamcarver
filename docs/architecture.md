@@ -80,8 +80,8 @@ and user-facing failures. It maps commands onto the functional API:
 
 - `resize` passes target dimensions to `resize()`.
 - `remove` converts direction and count to target dimensions, then carves a plan.
-- `highlight` converts direction and count to target dimensions, then highlights
-  the plan.
+- `highlight` passes target dimensions to `plan()`, then previews the pixels that
+  resizing would remove.
 
 The CLI keeps direction strings at its boundary. The Python API does not expose
 numeric direction constants.

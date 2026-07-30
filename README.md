@@ -68,7 +68,7 @@ uv sync --extra dev --frozen
 ## Quick Start
 
 ```bash
-seamcarver examples/medium.jpg resize 240 400
+seamcarver resize examples/medium.jpg 400 240
 ```
 
 This writes `medium_resized_400x240.jpg` in the current directory. Pass
@@ -77,19 +77,20 @@ This writes `medium_resized_400x240.jpg` in the current directory. Pass
 ## CLI Usage
 
 ```bash
-seamcarver <input> <command> [options]
+seamcarver <command> <input> [arguments] [options]
 ```
 
 ### Commands
 
-- `resize <height> <width>`: resize image to target dimensions
-- `remove --direction {vertical,horizontal} --count N`: remove `N` seams
-- `highlight --direction {vertical,horizontal} --count N [--rgb R G B]`: highlight seams
+- `resize <width> <height>`: resize an image to target dimensions
+- `remove [--direction {vertical,horizontal}] [--count N]`: remove seams
+- `highlight <width> <height> [--rgb R G B]`: highlight the pixels that resizing
+  to the target dimensions would remove
 
 ### Common options
 
 - `-o, --output <path>` output path; omit it to use a descriptive filename
-- `--energy {gradient,sobel,laplacian}` pixel-energy method; defaults to gradient
+- `-e, --energy {gradient,sobel,laplacian}` pixel-energy method; defaults to gradient
 - `-v, --verbose` debug-level logs
 - `-q, --quiet` warnings/errors only
 - `-l, --log-file <path>` write logs to file
