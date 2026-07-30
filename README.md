@@ -1,9 +1,9 @@
-# seamcarver
+# SeamOp
 
-[![CI](https://github.com/okinealb/seamcarver/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/okinealb/seamcarver/actions/workflows/ci.yml)
+[![CI](https://github.com/okinealb/seamop/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/okinealb/seamop/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-`seamcarver` is a Python library and command-line tool for content-aware image
+`seamop` is a Python library and command-line tool for content-aware image
 resizing. It shrinks images by removing connected paths of low-energy pixels
 instead of scaling every pixel or cropping a fixed region.
 
@@ -16,8 +16,7 @@ insertion are not implemented.
 
 ## Installation
 
-This project has not been published under its intended distribution name. The
-package named `seamcarver` on PyPI is unrelated.
+This project has not yet been published on PyPI.
 
 Install a local checkout with pip:
 
@@ -36,7 +35,7 @@ uv sync --extra dev --frozen
 Resize the smaller example to 400 by 240 pixels:
 
 ```bash
-seamcarver resize examples/medium.jpg 400 240
+seamop resize examples/medium.jpg 400 240
 ```
 
 This writes `medium_resized_400x240.jpg` in the current directory. Use
@@ -45,16 +44,16 @@ This writes `medium_resized_400x240.jpg` in the current directory. Use
 Preview the pixels that the same resize would remove:
 
 ```bash
-seamcarver highlight examples/medium.jpg 400 240
+seamop highlight examples/medium.jpg 400 240
 ```
 
 Other commands and options are available through the built-in help:
 
 ```bash
-seamcarver --help
-seamcarver resize --help
-seamcarver remove --help
-seamcarver highlight --help
+seamop --help
+seamop resize --help
+seamop remove --help
+seamop highlight --help
 ```
 
 CLI dimensions use `WIDTH HEIGHT`.
@@ -67,9 +66,9 @@ mutating the input.
 
 ```python
 from PIL import Image
-import seamcarver
+import seamop
 
-result = seamcarver.resize(
+result = seamop.resize(
     "examples/medium.jpg",
     width=400,
     height=240,
@@ -82,7 +81,7 @@ Use `plan()` when the carved result and preview must use the same seam
 decisions:
 
 ```python
-resize_plan = seamcarver.plan(
+resize_plan = seamop.plan(
     "examples/medium.jpg",
     width=400,
     height=240,
@@ -115,7 +114,7 @@ uv run --frozen ruff check src tests benchmarks
 uv run --frozen ruff format --check src tests benchmarks
 uv run --frozen mypy
 uv run --frozen pytest --cov
-uv run --frozen pytest --doctest-modules src/seamcarver
+uv run --frozen pytest --doctest-modules src/seamop
 ```
 
 Benchmarks run separately:

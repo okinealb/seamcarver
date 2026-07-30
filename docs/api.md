@@ -10,7 +10,7 @@ Both operations create owned RGB `uint8` arrays and leave the source unchanged.
 ## Resize an image
 
 ```python
-seamcarver.resize(image, *, height, width, method=seamcarver.GradientEnergy())
+seamop.resize(image, *, height, width, method=seamop.GradientEnergy())
 ```
 
 `image` may be:
@@ -32,9 +32,9 @@ The return value is a new RGB `uint8` NumPy array:
 
 ```python
 from PIL import Image
-import seamcarver
+import seamop
 
-result = seamcarver.resize(
+result = seamop.resize(
     "examples/medium.jpg",
     width=400,
     height=240,
@@ -49,7 +49,7 @@ horizontal seams. The order can affect the result and is currently fixed.
 ## Plan a resize
 
 ```python
-seamcarver.plan(image, *, height, width, method=seamcarver.GradientEnergy())
+seamop.plan(image, *, height, width, method=seamop.GradientEnergy())
 ```
 
 `plan()` accepts the same inputs as `resize()` and returns a `ResizePlan`.
@@ -57,7 +57,7 @@ Planning performs the seam search immediately. The stored decisions can then
 produce two outputs without repeating that work:
 
 ```python
-resize_plan = seamcarver.plan(
+resize_plan = seamop.plan(
     "examples/medium.jpg",
     width=400,
     height=240,
@@ -84,7 +84,7 @@ print(resize_plan.target_shape)
 `ResizePlan` keeps read-only internal arrays. `result()` and `preview()` return
 new writable copies, so modifying an output does not change the plan.
 
-Create plans with `seamcarver.plan()` rather than calling the `ResizePlan`
+Create plans with `seamop.plan()` rather than calling the `ResizePlan`
 constructor.
 
 ## Energy methods
@@ -98,11 +98,11 @@ grayscale alternatives are included:
 Pass an instance through `method`:
 
 ```python
-result = seamcarver.resize(
+result = seamop.resize(
     "examples/medium.jpg",
     width=400,
     height=240,
-    method=seamcarver.SobelEnergy(),
+    method=seamop.SobelEnergy(),
 )
 ```
 
@@ -112,14 +112,14 @@ NumPy array matching the image height and width:
 
 ```python
 import numpy as np
-import seamcarver
+import seamop
 
 
 def red_channel_energy(image: np.ndarray) -> np.ndarray:
     return image[..., 0].astype(np.float32)
 
 
-result = seamcarver.resize(
+result = seamop.resize(
     "examples/medium.jpg",
     width=400,
     height=240,
@@ -138,7 +138,7 @@ built-in methods.
 ```python
 import numpy as np
 
-from seamcarver.calculator import SeamCalculator
+from seamop.calculator import SeamCalculator
 
 image = np.zeros((4, 5, 3), dtype=np.uint8)
 mask = SeamCalculator()(image, num_seams=2)
@@ -154,7 +154,7 @@ does not mutate the array.
 `EnergyMethod` remains available for class-based implementations:
 
 ```python
-from seamcarver.methods import EnergyMethod
+from seamop.methods import EnergyMethod
 ```
 
 Subclassing it is optional because any compatible callable is accepted.

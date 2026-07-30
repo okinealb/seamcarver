@@ -48,7 +48,7 @@ jobs:
         run: uv run --frozen pytest --cov
 
       - name: Check docstring examples
-        run: uv run --frozen pytest --doctest-modules src/seamcarver
+        run: uv run --frozen pytest --doctest-modules src/seamop
 
       - name: Build package
         run: uv build

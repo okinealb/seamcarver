@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from seamcarver.calculator import SeamCalculator
-from seamcarver.methods import GradientEnergy
+from seamop.calculator import SeamCalculator
+from seamop.methods import GradientEnergy
 
 
 def test_default_method_is_gradient(calculator):

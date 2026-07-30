@@ -1,6 +1,6 @@
 import numpy as np
 
-from seamcarver.methods import GradientEnergy
+from seamop.methods import GradientEnergy
 
 
 def test_returns_expected_map(sample_image):

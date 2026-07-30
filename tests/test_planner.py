@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from seamcarver._planner import find_seams
+from seamop._planner import find_seams
 
 
 def test_tracks_source_coordinates_across_batches():
@@ -26,7 +26,7 @@ def test_stops_without_progress(monkeypatch):
     image = np.zeros((2, 3, 3), dtype=np.uint8)
     no_seams = np.zeros(image.shape[:2], dtype=bool)
     monkeypatch.setattr(
-        "seamcarver._planner._find_batch",
+        "seamop._planner._find_batch",
         lambda image, num_seams, batch_size, compute_energy: (0, no_seams),
     )
 

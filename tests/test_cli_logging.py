@@ -2,8 +2,8 @@ import logging
 from io import StringIO
 from types import SimpleNamespace
 
-from seamcarver.cli import main
-from seamcarver.logger import ColoredFormatter, setup_cli_logging
+from seamop.cli import main
+from seamop.logger import ColoredFormatter, setup_cli_logging
 
 
 def test_verbose_includes_debug(capsys, input_image_path, output_path):
@@ -49,7 +49,7 @@ def test_quiet_suppresses_info(capsys, input_image_path, output_path):
 
 
 def test_file_receives_messages(capsys, input_image_path, output_path, tmp_path):
-    log_path = tmp_path / "seamcarver.log"
+    log_path = tmp_path / "seamop.log"
     main(
         [
             "resize",
@@ -104,9 +104,9 @@ def test_setup_preserves_root_and_replaces_cli_handlers(tmp_path):
 
 def test_colored_formatter_does_not_mutate_record(monkeypatch):
     fake_sys = SimpleNamespace(stderr=SimpleNamespace(isatty=lambda: True))
-    monkeypatch.setattr("seamcarver.logger.sys", fake_sys)
+    monkeypatch.setattr("seamop.logger.sys", fake_sys)
     record = logging.LogRecord(
-        "seamcarver.cli", logging.ERROR, "cli.py", 1, "failure", (), None
+        "seamop.cli", logging.ERROR, "cli.py", 1, "failure", (), None
     )
 
     rendered = ColoredFormatter("%(levelname)s").format(record)

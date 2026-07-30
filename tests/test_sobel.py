@@ -1,6 +1,6 @@
 import numpy as np
 
-from seamcarver.methods import SobelEnergy
+from seamop.methods import SobelEnergy
 
 
 def test_returns_bounded_map(sample_image):

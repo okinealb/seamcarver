@@ -7,8 +7,8 @@ build-backend = "setuptools.build_meta"
 
 # Project metadata
 [project]
-name = "seamcarver"
-version = "0.5.1"
+name = "seamop"
+version = "0.1.0"
 description = "A Python library and CLI for content-aware image resizing using seam carving."
 authors = [{ name = "Albert Kenneth" }]
 license = "MIT"
@@ -46,13 +46,13 @@ classifiers = [
 
 # URLs for the main project repository
 [project.urls]
-Homepage = "https://github.com/okinealb/seamcarver"
-Repository = "https://github.com/okinealb/seamcarver.git"
-Issues = "https://github.com/okinealb/seamcarver/issues"
+Homepage = "https://github.com/okinealb/seamop"
+Repository = "https://github.com/okinealb/seamop.git"
+Issues = "https://github.com/okinealb/seamop/issues"
 
 # Optional scripts to run the command-line interface
 [project.scripts]
-seamcarver = "seamcarver.cli:main"
+seamop = "seamop.cli:main"
 
 # Optional dependencies for development and testing
 [project.optional-dependencies]
@@ -72,11 +72,11 @@ dev = [
 # Configuration for setuptools to find packages correctly
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["seamcarver*"]
+include = ["seamop*"]
 exclude = ["tests*", "test*", "build*", "dist*", "*.egg-info*"]
 
 [tool.setuptools.package-data]
-seamcarver = ["py.typed"]
+seamop = ["py.typed"]
 
 # Pytest configuration 
 [tool.pytest.ini_options]
@@ -95,7 +95,7 @@ console_output_style = "progress"
 
 [tool.coverage.run]
 branch = true
-source = ["seamcarver"]
+source = ["seamop"]
 
 [tool.coverage.report]
 fail_under = 95
@@ -112,7 +112,7 @@ select = ["E4", "E7", "E9", "F", "I"]
 [tool.mypy]
 python_version = "3.10"
 strict = true
-files = ["src/seamcarver"]
+files = ["src/seamop"]
 warn_unused_configs = true
 
 [[tool.mypy.overrides]]

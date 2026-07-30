@@ -1,6 +1,6 @@
 import numpy as np
 
-from seamcarver.methods import LaplacianEnergy
+from seamop.methods import LaplacianEnergy
 
 
 def test_returns_bounded_map(sample_image):

@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from seamcarver._image import normalize_image
+from seamop._image import normalize_image
 
 
 class TestArrayInput:

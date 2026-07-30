@@ -1,6 +1,6 @@
 import pytest
 
-from seamcarver.cli import main
+from seamop.cli import main
 
 
 def test_missing_image_exits_nonzero(capsys):
@@ -77,7 +77,7 @@ def test_existing_output_is_not_overwritten(
     def fail_resize(*args, **kwargs):
         pytest.fail("Resize started before output validation")
 
-    monkeypatch.setattr("seamcarver.cli.resize", fail_resize)
+    monkeypatch.setattr("seamop.cli.resize", fail_resize)
 
     with pytest.raises(SystemExit) as exc_info:
         main(
@@ -109,7 +109,7 @@ def test_existing_default_output_is_not_overwritten(
     def fail_resize(*args, **kwargs):
         pytest.fail("Resize started before output validation")
 
-    monkeypatch.setattr("seamcarver.cli.resize", fail_resize)
+    monkeypatch.setattr("seamop.cli.resize", fail_resize)
 
     with pytest.raises(SystemExit) as exc_info:
         main(["resize", input_image_path, "5", "4"])
@@ -132,7 +132,7 @@ def test_unexpected_error_controls_traceback(
     def fail_resize(*args, **kwargs):
         raise RuntimeError("resize failed")
 
-    monkeypatch.setattr("seamcarver.cli.resize", fail_resize)
+    monkeypatch.setattr("seamop.cli.resize", fail_resize)
     args = ["resize", input_image_path]
     if verbose:
         args.append("--verbose")
@@ -152,7 +152,7 @@ def test_keyboard_interrupt_exits_130(capsys, input_image_path, monkeypatch):
     def interrupt_resize(*args, **kwargs):
         raise KeyboardInterrupt
 
-    monkeypatch.setattr("seamcarver.cli.resize", interrupt_resize)
+    monkeypatch.setattr("seamop.cli.resize", interrupt_resize)
 
     with pytest.raises(SystemExit) as exc_info:
         main(["resize", input_image_path, "5", "4"])
@@ -171,7 +171,7 @@ def test_usage_error_is_concise(capsys):
 
     assert exc_info.value.code == 1
     assert "Error: Invalid value for WIDTH" in captured.err
-    assert "Try 'seamcarver resize --help'" in captured.err
+    assert "Try 'seamop resize --help'" in captured.err
     assert "Usage:" not in captured.err
     assert "Traceback" not in captured.err
 

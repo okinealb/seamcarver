@@ -1,6 +1,6 @@
 # Architecture
 
-`seamcarver` separates input/output concerns, public resize orchestration,
+`seamop` separates input/output concerns, public resize orchestration,
 repeated seam planning, one-seam search, and energy calculation.
 
 ```mermaid
@@ -28,7 +28,7 @@ flowchart TD
 
 ### Public operations
 
-`src/seamcarver/core.py` exposes two ordinary entry points:
+`src/seamop/core.py` exposes two ordinary entry points:
 
 - `resize()` normalizes an image, validates target dimensions, builds a plan,
   and returns an owned carved image.
@@ -39,7 +39,7 @@ Neither operation mutates the caller's input.
 
 ### Resize plans
 
-`src/seamcarver/_plan.py` owns multi-direction resize orchestration and the
+`src/seamop/_plan.py` owns multi-direction resize orchestration and the
 `ResizePlan` result. A plan stores independent source, result, and removal-mask
 arrays. Its internal arrays are read-only; `result()` and `preview()` return
 owned copies.
@@ -50,32 +50,32 @@ original orientation.
 
 ### Seam calculation
 
-`src/seamcarver/calculator.py` validates an energy callable's output and delegates
+`src/seamop/calculator.py` validates an energy callable's output and delegates
 repeated removal to the private planner. It returns a boolean mask in source-image
 coordinates and does not mutate its input.
 
-`src/seamcarver/_planner.py` owns repeated energy computation, seam removal, and
+`src/seamop/_planner.py` owns repeated energy computation, seam removal, and
 source-coordinate tracking. Public operations recompute energy after every seam.
 
-`src/seamcarver/_search.py` contains the dynamic-programming cost calculation and
+`src/seamop/_search.py` contains the dynamic-programming cost calculation and
 one-seam backtracking logic.
 
 ### Energy callables
 
-`src/seamcarver/methods/` contains the built-in gradient, Sobel, and Laplacian
+`src/seamop/methods/` contains the built-in gradient, Sobel, and Laplacian
 methods. Plain functions and callable objects are also accepted. The calculator
 requires a finite, real, two-dimensional numeric map matching the current image
 height and width.
 
 ### Input and validation boundaries
 
-`src/seamcarver/_image.py` converts supported inputs into owned RGB `uint8`
-arrays. `src/seamcarver/_validation.py` handles integer-like dimensions, seam
+`src/seamop/_image.py` converts supported inputs into owned RGB `uint8`
+arrays. `src/seamop/_validation.py` handles integer-like dimensions, seam
 counts, and RGB colors.
 
 ### CLI boundary
 
-`src/seamcarver/cli.py` owns command parsing, filesystem input/output, logging,
+`src/seamop/cli.py` owns command parsing, filesystem input/output, logging,
 and user-facing failures. It maps commands onto the functional API:
 
 - `resize` passes target dimensions to `resize()`.
@@ -108,8 +108,8 @@ The top-level public surface is:
 - the built-in energy methods
 - `__version__`
 
-`SeamCalculator` remains available from `seamcarver.calculator`, and
-`EnergyMethod` remains available from `seamcarver.methods`.
+`SeamCalculator` remains available from `seamop.calculator`, and
+`EnergyMethod` remains available from `seamop.methods`.
 
 The mutable `SeamCarver` compatibility class and numeric direction constants
 were retired during beta. The intended distribution remains unreleased, so the
