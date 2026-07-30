@@ -1,8 +1,8 @@
 include benchmarks/*.py
 include src/seamcarver/py.typed
+include docs/api.md
 include docs/algorithm-overview.md
 include docs/architecture.md
 include docs/benchmarking.md
 include docs/design-decisions.md
-include docs/optimization.md
 include tests/*.py

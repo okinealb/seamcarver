@@ -1,12 +1,5 @@
-"""
-The abstract base class for energy methods in seam carving.
+"""Energy-callable types and the optional class-based interface."""
 
-This module defines the `EnergyMethod` interface, which includes methods for
-finding seams. It serves as a blueprint for implementing various energy
-calculation strategies in seam carving algorithms.
-"""
-
-# Import standard library packages
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import TypeAlias
@@ -21,41 +14,29 @@ EnergyCallable: TypeAlias = Callable[
 
 
 class EnergyMethod(ABC):
-    """Base class for energy computation methods.
-
-    This abstract base class defines the interface for computing energy maps
-    in seam carving algorithms. Energy methods are callable objects that
-    transform images into importance maps for guiding seam placement.
+    """Optional base class for energy-map callables.
 
     Examples:
+        >>> import numpy as np
+        >>> from seamcarver.methods import EnergyMethod
         >>> class CustomEnergy(EnergyMethod):
         ...     def __call__(self, image: np.ndarray) -> np.ndarray:
-        ...         return np.random.random(image.shape[:2])
-        ...
-        >>> method = CustomEnergy()
-        >>> energy_map = method(image)
-
-    Note:
-        This class assumes vertical seam orientation. For horizontal
-        seams, transpose the image before passing to the method.
+        ...         return image[..., 0].astype(np.float32)
+        >>> image = np.zeros((2, 3, 3), dtype=np.uint8)
+        >>> CustomEnergy()(image).shape
+        (2, 3)
     """
 
     @abstractmethod
     def __call__(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.generic]:
-        """Compute energy map indicating pixel importance.
+        """Return a pixel-energy map.
 
         Args:
-            image: Input image as 3D numpy array (height, width, channels).
-                Expected to be an RGB uint8 array.
+            image: RGB uint8 array shaped `(height, width, 3)`.
 
         Returns:
             A real numeric NumPy array matching the image height and width.
             Values must remain finite when converted to float32. Higher values
             indicate pixels that should be preserved.
-
-        Examples:
-            >>> method = GradientEnergy()
-            >>> energy = method(image)
-            >>> assert energy.shape == image.shape[:2]
         """
         pass

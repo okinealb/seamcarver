@@ -44,6 +44,9 @@ jobs:
       - name: Type check
         run: uv run --frozen mypy
 
+      - name: Check docstring examples
+        run: uv run --frozen pytest --doctest-modules src/seamcarver
+
       - name: Build package
         run: uv build
 
