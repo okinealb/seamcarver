@@ -39,7 +39,7 @@ jobs:
         run: uv run --frozen ruff check src tests benchmarks
 
       - name: Check formatting
-        run: uv run --frozen black --check --target-version py310 src tests benchmarks
+        run: uv run --frozen ruff format --check src tests benchmarks
 
       - name: Type check
         run: uv run --frozen mypy
