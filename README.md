@@ -7,9 +7,9 @@
 resizing. It shrinks images by removing connected paths of low-energy pixels
 instead of scaling every pixel or cropping a fixed region.
 
-| Original | Planned removals | Resized |
-| --- | --- | --- |
-| ![Original image](examples/medium.jpg) | ![Highlighted seams](examples/medium_seams.jpg) | ![Resized image](examples/medium_resized.jpg) |
+| Original (1428 × 968) | Resized (1000 × 900) |
+| --- | --- |
+| ![Original castle image](examples/large.jpg) | ![Content-aware resized castle image](examples/large_resized.jpg) |
 
 The current beta supports shrinking by seam removal. Enlargement and seam
 insertion are not implemented.
@@ -33,19 +33,19 @@ uv sync --extra dev --frozen
 
 ## Command line
 
-Resize the higher-resolution example to 1000 by 700 pixels:
+Resize the smaller example to 400 by 240 pixels:
 
 ```bash
-seamcarver resize examples/large.jpg 1000 700
+seamcarver resize examples/medium.jpg 400 240
 ```
 
-This writes `large_resized_1000x700.jpg` in the current directory. Use
+This writes `medium_resized_400x240.jpg` in the current directory. Use
 `--output` to choose another path. Existing image outputs are not overwritten.
 
 Preview the pixels that the same resize would remove:
 
 ```bash
-seamcarver highlight examples/large.jpg 1000 700
+seamcarver highlight examples/medium.jpg 400 240
 ```
 
 Other commands and options are available through the built-in help:
@@ -70,12 +70,12 @@ from PIL import Image
 import seamcarver
 
 result = seamcarver.resize(
-    "examples/large.jpg",
-    width=1000,
-    height=700,
+    "examples/medium.jpg",
+    width=400,
+    height=240,
 )
 
-Image.fromarray(result).save("large_resized_1000x700.jpg")
+Image.fromarray(result).save("medium_resized_400x240.jpg")
 ```
 
 Use `plan()` when the carved result and preview must use the same seam
@@ -83,9 +83,9 @@ decisions:
 
 ```python
 resize_plan = seamcarver.plan(
-    "examples/large.jpg",
-    width=1000,
-    height=700,
+    "examples/medium.jpg",
+    width=400,
+    height=240,
 )
 
 preview = resize_plan.preview()

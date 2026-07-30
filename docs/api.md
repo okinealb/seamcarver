@@ -35,12 +35,12 @@ from PIL import Image
 import seamcarver
 
 result = seamcarver.resize(
-    "examples/large.jpg",
-    width=1000,
-    height=700,
+    "examples/medium.jpg",
+    width=400,
+    height=240,
 )
 
-Image.fromarray(result).save("large_resized_1000x700.jpg")
+Image.fromarray(result).save("medium_resized_400x240.jpg")
 ```
 
 When both dimensions shrink, `resize()` removes vertical seams first and then
@@ -58,9 +58,9 @@ produce two outputs without repeating that work:
 
 ```python
 resize_plan = seamcarver.plan(
-    "examples/large.jpg",
-    width=1000,
-    height=700,
+    "examples/medium.jpg",
+    width=400,
+    height=240,
 )
 
 preview = resize_plan.preview()
@@ -99,9 +99,9 @@ Pass an instance through `method`:
 
 ```python
 result = seamcarver.resize(
-    "examples/large.jpg",
-    width=1000,
-    height=700,
+    "examples/medium.jpg",
+    width=400,
+    height=240,
     method=seamcarver.SobelEnergy(),
 )
 ```
@@ -120,9 +120,9 @@ def red_channel_energy(image: np.ndarray) -> np.ndarray:
 
 
 result = seamcarver.resize(
-    "examples/large.jpg",
-    width=1000,
-    height=700,
+    "examples/medium.jpg",
+    width=400,
+    height=240,
     method=red_channel_energy,
 )
 ```
