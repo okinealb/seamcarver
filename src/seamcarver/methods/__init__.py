@@ -1,42 +1,8 @@
-"""
-Energy Methods for Seam Carving
-
-This package provides built-in energy calculation methods used in the seam
-carving algorithm for content-aware image resizing. Energy methods determine
-the importance of each pixel in an image, guiding which pixels are removed or
-duplicated during resizing to preserve important visual content.
-
-Available Energy Methods:
-- `LaplacianEnergy`: Uses the Laplacian operator to highlight regions of rapid intensity change, making it effective for edge detection.
-- `SobelEnergy`: Uses the Sobel operator to compute the gradient magnitude, emphasizing edges by measuring intensity changes in both horizontal and vertical directions.
-- `GradientEnergy`: Computes the energy map based on image gradients, providing a measure of pixel importance based on local changes in intensity.
-
-To use an energy method, instantiate it and pass it to `resize` or `plan`.
-
-Example:
-
-    import seamcarver
-
-    energy_method = seamcarver.SobelEnergy()
-    result = seamcarver.resize(
-        image,
-        height=480,
-        width=640,
-        method=energy_method,
-    )
-
-Note: These methods assume that the image is always in a vertical orientation for seam carving.
-For horizontal seams, the image should be transposed before passing it to the methods.
-"""
+"""Built-in energy methods and the optional class-based interface."""
 
 from .gradient import GradientEnergy
-
-# Expose the interface
 from .interface import EnergyMethod
-
-# Expose the energy methods
 from .laplacian import LaplacianEnergy
 from .sobel import SobelEnergy
 
-# Define the public API of this module
 __all__ = ["EnergyMethod", "GradientEnergy", "LaplacianEnergy", "SobelEnergy"]

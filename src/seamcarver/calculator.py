@@ -1,13 +1,4 @@
-"""
-Core seam detection module for content-aware image resizing.
-
-This module provides the `SeamCalculator` class, which implements the
-seam carving algorithm using dynamic programming. It includes methods
-for finding optimal seams through images based on energy computation.
-
-For more information on seam carving, refer to the
-[Wikipedia article](https://en.wikipedia.org/wiki/Seam_carving).
-"""
+"""Advanced vertical seam calculation."""
 
 from typing import SupportsIndex
 
@@ -21,42 +12,35 @@ from .methods import GradientEnergy
 from .methods.interface import EnergyCallable
 
 
-# Main class for seam carving calculations
 class SeamCalculator:
-    """Calculator for seam carving operations using dynamic programming.
-
-    This class implements the core seam carving algorithm to find optimal
-    seams (connected paths) through an image based on energy computation. The
-    calculator uses dynamic programming to efficiently find minimum energy
-    paths suitable for image resizing.
+    """Find vertical seams with a configurable energy callable.
 
     Attributes:
         method: Callable that computes pixel energy for seam detection.
 
     Examples:
-        >>> calculator = SeamCalculator()
-        >>> seam_mask = calculator(image, num_seams=5)
-
-        >>> from seamcarver import SobelEnergy
+        >>> import numpy as np
         >>> from seamcarver.calculator import SeamCalculator
-        >>> calculator = SeamCalculator(method=SobelEnergy())
-        >>> seam_mask = calculator(image, num_seams=10)
+        >>> image = np.zeros((4, 5, 3), dtype=np.uint8)
+        >>> calculator = SeamCalculator()
+        >>> seam_mask = calculator(image, num_seams=2)
+        >>> seam_mask.shape, int(seam_mask.sum())
+        ((4, 5), 8)
 
     Note:
-        This class assumes vertical seam orientation. For horizontal seams,
-        transpose the image before passing to the calculator.
+        This advanced interface calculates vertical seams. The top-level API
+        handles image normalization and horizontal resizing.
     """
 
-    # Class attributes
     method: EnergyCallable
     """Callable used to calculate image energy."""
 
     def __init__(self, method: EnergyCallable = GradientEnergy()) -> None:
-        """Initialize the SeamCalculator with an energy computation method.
+        """Set the energy callable used for seam selection.
 
         Args:
-            method: Method for computing pixel energy values.
-                Defaults to GradientEnergy().
+            method: Callable returning an energy map. Defaults to
+                :class:`GradientEnergy`.
         """
         self.method = method
 
@@ -65,11 +49,9 @@ class SeamCalculator:
         image: npt.NDArray[np.uint8],
         num_seams: SupportsIndex,
     ) -> npt.NDArray[np.bool_]:
-        """Find optimal seams in image and return as boolean mask.
+        """Return vertical seams as a source-sized boolean mask.
 
-        Seams are removed from an internal image copy, and retained pixel indices
-        are tracked via a flattened map. This allows reconstruction of all seam
-        positions without mutating the caller's image.
+        The source array is not mutated.
 
         Args:
             image: RGB uint8 NumPy array shaped (height, width, 3).
@@ -77,11 +59,7 @@ class SeamCalculator:
                 than the image width.
 
         Returns:
-            mask: (height, width) where True indicates seam pixels.
-
-        Examples:
-            >>> mask = calculator(image, 1)
-            >>> assert mask.sum() == image.shape[0]  # One pixel per row
+            A `(height, width)` mask whose true values identify seam pixels.
         """
 
         _validate_ndarray(image)

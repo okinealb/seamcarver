@@ -20,17 +20,22 @@ def plan(
     width: SupportsIndex,
     method: EnergyCallable = GradientEnergy(),
 ) -> ResizePlan:
-    """Compute a reusable width-first resize plan.
+    """Plan a width-first resize without mutating the source.
 
     Args:
-        image: Supported image input converted to an owned RGB uint8 array.
+        image: Filesystem path, Pillow image, RGB uint8 NumPy array, or nested
+            RGB integer list.
         height: Positive target height no larger than the source height.
         width: Positive target width no larger than the source width.
-        method: Callable that computes an energy map for an RGB uint8 array.
+        method: Energy callable. Defaults to :class:`GradientEnergy`.
 
     Returns:
-        A plan that can render the carved result or highlight removed pixels
-        without repeating seam search.
+        A plan that produces a carved result and source-sized preview from the
+        same seam decisions.
+
+    Raises:
+        TypeError: An input has an unsupported type.
+        ValueError: The image or target dimensions are invalid.
     """
     normalized = normalize_image(image)
     height = validate_resize_target("height", height, normalized.shape[0])
@@ -50,7 +55,7 @@ def resize(
     width: SupportsIndex,
     method: EnergyCallable = GradientEnergy(),
 ) -> npt.NDArray[np.uint8]:
-    """Return an owned RGB uint8 image resized width-first.
+    """Return a width-first resized RGB uint8 image.
 
     The source input is not mutated. Target dimensions must be positive and no
     larger than the source because seam addition is not implemented.

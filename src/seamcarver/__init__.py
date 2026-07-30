@@ -1,29 +1,23 @@
-"""Content-aware image resizing through seam carving.
+"""Content-aware image resizing by seam removal.
 
-Use :func:`resize` for an owned transformed image or :func:`plan` when the
-same seam decisions must produce both a preview and a result.
+Use :func:`resize` for a transformed image or :func:`plan` when a preview and
+result must share the same seam decisions.
 
-    >>> import seamcarver
-    >>> result = seamcarver.resize(image, height=150, width=200)
-    >>> resize_plan = seamcarver.plan(image, height=150, width=200)
-    >>> preview = resize_plan.preview()
-
+>>> import numpy as np
+>>> import seamcarver
+>>> image = np.zeros((4, 5, 3), dtype=np.uint8)
+>>> seamcarver.resize(image, height=3, width=4).shape
+(3, 4, 3)
 """
 
 from importlib.metadata import version as _distribution_version
 
-# Expose the reusable plan result
 from ._plan import ResizePlan
-
-# Expose public operations
 from .core import plan, resize
-
-# Import the implemented energy methods
 from .methods import GradientEnergy, LaplacianEnergy, SobelEnergy
 
 __version__ = _distribution_version("seamcarver")
 
-# Define the public API of this module
 __all__ = [
     "ResizePlan",
     "resize",

@@ -15,7 +15,7 @@ DEFAULT_HIGHLIGHT_COLOR = (255, 0, 0)
 
 @dataclass(eq=False, frozen=True, repr=False, slots=True)
 class ResizePlan:
-    """Store one completed resize and its source-pixel removals.
+    """A completed resize and its source-pixel removals.
 
     Create plans with :func:`seamcarver.plan` rather than constructing this
     class directly.
@@ -53,14 +53,14 @@ class ResizePlan:
         )
 
     def result(self) -> npt.NDArray[np.uint8]:
-        """Return an owned copy of the planned result."""
+        """Return a writable copy of the resized image."""
         return self._result.copy()
 
     def preview(
         self,
         color: Sequence[SupportsIndex] = DEFAULT_HIGHLIGHT_COLOR,
     ) -> npt.NDArray[np.uint8]:
-        """Return an owned source image with planned removals colored.
+        """Return a source-sized copy with planned removals colored.
 
         Args:
             color: Three RGB integer values from 0 through 255.
