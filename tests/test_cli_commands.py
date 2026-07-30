@@ -9,10 +9,13 @@ from seamcarver.methods import GradientEnergy, LaplacianEnergy, SobelEnergy
 def test_resize_writes_requested_dimensions(capsys, input_image_path, output_path):
     main(
         [
-            input_image_path,
             "resize",
-            "4",
+            "--input",
+            input_image_path,
+            "--width",
             "5",
+            "--height",
+            "4",
             "--output",
             str(output_path),
         ]
@@ -21,7 +24,7 @@ def test_resize_writes_requested_dimensions(capsys, input_image_path, output_pat
     captured = capsys.readouterr()
 
     assert "Loading image" in captured.err
-    assert "Resizing" in captured.err
+    assert "Resizing image to 5x4" in captured.err
     assert "Saving" in captured.err
     assert str(output_path) in captured.err
     assert "Processing completed in" in captured.err
@@ -34,7 +37,7 @@ def test_resize_without_output_uses_descriptive_name(
 ):
     monkeypatch.chdir(tmp_path)
 
-    main([input_image_path, "resize", "4", "5"])
+    main(["resize", input_image_path, "5", "4"])
 
     captured = capsys.readouterr()
     default_output = tmp_path / "input_resized_5x4.png"
@@ -49,7 +52,7 @@ def test_resize_without_output_uses_descriptive_name(
     ("command", "filename"),
     [
         (["remove", "--count", "2"], "input_removed_2_vertical.png"),
-        (["highlight", "--count", "2"], "input_highlighted_2_vertical.png"),
+        (["highlight", "5", "4"], "input_highlighted_5x4.png"),
     ],
     ids=["remove", "highlight"],
 )
@@ -62,7 +65,7 @@ def test_command_without_output_uses_descriptive_name(
         lambda self: pytest.fail("CLI attempted to display an image"),
     )
 
-    main([input_image_path, *command])
+    main([command[0], input_image_path, *command[1:]])
 
     assert (tmp_path / filename).exists()
 
@@ -80,13 +83,13 @@ def test_remove_writes_expected_dimensions(
 ):
     main(
         [
-            input_image_path,
             "remove",
-            "--direction",
+            input_image_path,
+            "-d",
             direction,
-            "--count",
+            "-c",
             count,
-            "--output",
+            "-o",
             str(output_path),
         ]
     )
@@ -103,8 +106,8 @@ def test_remove_writes_expected_dimensions(
 def test_remove_defaults_to_one_seam(capsys, input_image_path, output_path):
     main(
         [
-            input_image_path,
             "remove",
+            input_image_path,
             "--direction",
             "vertical",
             "--output",
@@ -121,16 +124,17 @@ def test_remove_defaults_to_one_seam(capsys, input_image_path, output_path):
 
 
 @pytest.mark.parametrize(
-    ("direction", "count", "expected_pixels"),
+    ("width", "height", "expected_pixels"),
     [
-        ("vertical", "2", 12),
-        ("horizontal", None, 7),
+        ("5", "6", 12),
+        ("7", "4", 14),
+        ("5", "4", 22),
     ],
-    ids=["vertical-count", "horizontal-default"],
+    ids=["vertical", "horizontal", "both"],
 )
 def test_highlight_writes_colored_seams(
-    direction,
-    count,
+    width,
+    height,
     expected_pixels,
     capsys,
     input_image_path,
@@ -142,26 +146,46 @@ def test_highlight_writes_colored_seams(
         lambda self: pytest.fail("CLI attempted to display an image"),
     )
     args = [
-        input_image_path,
         "highlight",
-        "--direction",
-        direction,
+        input_image_path,
+        width,
+        height,
         "--output",
         str(output_path),
     ]
-    if count is not None:
-        args.extend(["--count", count])
 
     main(args)
 
     captured = capsys.readouterr()
 
     assert "Highlighting" in captured.err
-    assert direction in captured.err
+    assert f"{width}x{height}" in captured.err
     with Image.open(output_path) as output:
         pixels = np.asarray(output)
         assert output.size == (7, 6)
         assert np.all(pixels == (255, 0, 0), axis=-1).sum() == expected_pixels
+
+
+def test_highlight_accepts_rgb_alias(input_image_path, output_path):
+    main(
+        [
+            "highlight",
+            input_image_path,
+            "6",
+            "6",
+            "-r",
+            "1",
+            "2",
+            "3",
+            "-o",
+            str(output_path),
+        ]
+    )
+
+    with Image.open(output_path) as output:
+        pixels = np.asarray(output)
+
+    assert np.all(pixels == (1, 2, 3), axis=-1).sum() == 6
 
 
 @pytest.mark.parametrize(
@@ -189,9 +213,9 @@ def test_resize_selects_energy_method(
         return image[:height, :width]
 
     monkeypatch.setattr("seamcarver.cli.resize", fake_resize)
-    args = [input_image_path, "resize", "4", "5", "--output", str(output_path)]
+    args = ["resize", input_image_path, "5", "4", "--output", str(output_path)]
     if option is not None:
-        args.extend(["--energy", option])
+        args.extend(["-e", option])
 
     main(args)
 
