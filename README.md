@@ -114,7 +114,7 @@ Run the repository checks from the project root:
 uv run --frozen ruff check src tests benchmarks
 uv run --frozen ruff format --check src tests benchmarks
 uv run --frozen mypy
-uv run --frozen pytest
+uv run --frozen pytest --cov
 uv run --frozen pytest --doctest-modules src/seamcarver
 ```
 
