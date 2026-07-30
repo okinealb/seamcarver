@@ -16,12 +16,10 @@ insertion are not implemented.
 
 ## Installation
 
-This project has not yet been published on PyPI.
-
-Install a local checkout with pip:
+Install from PyPI:
 
 ```bash
-python -m pip install .
+python -m pip install seamop
 ```
 
 For development, use the locked uv environment:
