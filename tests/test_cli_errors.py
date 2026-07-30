@@ -13,6 +13,32 @@ def test_missing_image_exits_nonzero(capsys):
     assert exc_info.value.code != 0
 
 
+def test_invalid_image_reports_supported_formats(capsys, tmp_path):
+    input_path = tmp_path / "invalid.png"
+    output_path = tmp_path / "output.png"
+    input_path.write_text("not an image")
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(
+            [
+                "resize",
+                str(input_path),
+                "5",
+                "4",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+    captured = capsys.readouterr()
+
+    assert exc_info.value.code == 1
+    assert "Invalid image file format." in captured.err
+    assert "PIL supported formats" in captured.err
+    assert "Invalid input:" not in captured.err
+    assert not output_path.exists()
+
+
 @pytest.mark.parametrize(
     "command",
     [
