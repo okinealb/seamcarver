@@ -112,7 +112,7 @@ Run the repository checks from the project root:
 
 ```bash
 uv run --frozen ruff check src tests benchmarks
-uv run --frozen black --check --target-version py310 src tests benchmarks
+uv run --frozen ruff format --check src tests benchmarks
 uv run --frozen mypy
 uv run --frozen pytest
 uv run --frozen pytest --doctest-modules src/seamcarver

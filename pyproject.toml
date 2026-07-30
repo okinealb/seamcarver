@@ -63,7 +63,6 @@ test = [
 dev = [
     "pytest>=7.0.0",
     "pytest-benchmark>=4.0.0", 
-    "black>=22.0.0",
     "mypy>=2.3.0",
     "ruff>=0.9.0",
 ]
