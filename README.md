@@ -1,249 +1,136 @@
 # seamcarver
 
-A Python package and command-line interface for content-aware image resizing with seam carving.
+[![CI](https://github.com/okinealb/seamcarver/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/okinealb/seamcarver/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-`seamcarver` removes low-information pixel paths (seams) instead of uniformly scaling or naively cropping, helping preserve visually important content. The implementation combines dynamic-programming seam search, pluggable energy functions, and a modular API/CLI architecture for experimentation and practical use.
+`seamcarver` is a Python library and command-line tool for content-aware image
+resizing. It shrinks images by removing connected paths of low-energy pixels
+instead of scaling every pixel or cropping a fixed region.
 
-## Additional Documentation
+| Original | Planned removals | Resized |
+| --- | --- | --- |
+| ![Original image](examples/medium.jpg) | ![Highlighted seams](examples/medium_seams.jpg) | ![Resized image](examples/medium_resized.jpg) |
 
-Detailed engineering documentation is available in the [`docs/`](docs/) directory:
-
-- [Architecture Overview](docs/architecture.md)
-- [Design Decisions](docs/design-decisions.md)
-- [Optimization Notes](docs/optimization.md)
-- [Benchmark Methodology](docs/benchmarking.md)
-- [Algorithm Walkthrough](docs/algorithm-overview.md)
-
-## Visual Examples
-
-| Original | Resized (content-aware) |
-| --- | --- |
-| ![Original sample image](examples/medium.jpg) | ![Resized sample image](examples/medium_resized.jpg) |
-
-| Seam Overlay |
-| --- |
-| ![Highlighted seams](examples/medium_seams.jpg) |
-
-## Overview
-
-Seam carving finds connected pixel paths with minimal cumulative energy and removes them iteratively to resize images while preserving salient structures. This repository provides:
-
-- A functional Python API for integration into scripts and applications
-- A CLI (`seamcarver`) for direct image processing workflows
-- Extensible energy-method abstractions for algorithm experimentation
-- A dynamic-programming seam computation pipeline that recalculates energy after
-  each removal
-
-## Features
-
-- Content-aware image resizing via seam carving
-- Vertical and horizontal seam removal
-- Seam highlighting for visualization/debugging
-- Pluggable energy methods:
-  - `GradientEnergy`
-  - `SobelEnergy`
-  - `LaplacianEnergy`
-- Dynamic-programming cumulative-cost computation and seam backtracking
-- Iterative seam extraction and mask-based seam removal
-- CLI logging controls: `--verbose`, `--quiet`, `--log-file`
-- Python API and packaged distribution via `pyproject.toml`
+The current beta supports shrinking by seam removal. Enlargement and seam
+insertion are not implemented.
 
 ## Installation
 
-This beta is not published under this distribution name. The package named
-`seamcarver` on PyPI is unrelated to this project.
+This project has not been published under its intended distribution name. The
+package named `seamcarver` on PyPI is unrelated.
 
-Install a local checkout with standard Python tooling:
+Install a local checkout with pip:
 
 ```bash
 python -m pip install .
 ```
 
-For development, install the locked environment with uv:
+For development, use the locked uv environment:
 
 ```bash
 uv sync --extra dev --frozen
 ```
 
-## Quick Start
+## Command line
+
+Resize the higher-resolution example to 1000 by 700 pixels:
 
 ```bash
-seamcarver resize examples/medium.jpg 400 240
+seamcarver resize examples/large.jpg 1000 700
 ```
 
-This writes `medium_resized_400x240.jpg` in the current directory. Pass
-`--output` to choose a different path.
+This writes `large_resized_1000x700.jpg` in the current directory. Use
+`--output` to choose another path. Existing image outputs are not overwritten.
 
-## CLI Usage
+Preview the pixels that the same resize would remove:
 
 ```bash
-seamcarver <command> <input> [arguments] [options]
+seamcarver highlight examples/large.jpg 1000 700
 ```
 
-### Commands
+Other commands and options are available through the built-in help:
 
-- `resize <width> <height>`: resize an image to target dimensions
-- `remove [--direction {vertical,horizontal}] [--count N]`: remove seams
-- `highlight <width> <height> [--rgb R G B]`: highlight the pixels that resizing
-  to the target dimensions would remove
+```bash
+seamcarver --help
+seamcarver resize --help
+seamcarver remove --help
+seamcarver highlight --help
+```
 
-### Common options
+CLI dimensions use `WIDTH HEIGHT`.
 
-- `-o, --output <path>` output path; omit it to use a descriptive filename
-- `-e, --energy {gradient,sobel,laplacian}` pixel-energy method; defaults to gradient
-- `-v, --verbose` debug-level logs
-- `-q, --quiet` warnings/errors only
-- `-l, --log-file <path>` write logs to file
+## Python
 
-## Library Usage
+`resize()` accepts a filesystem path, Pillow image, RGB `uint8` NumPy array, or
+nested RGB integer list. It returns a new RGB `uint8` NumPy array without
+mutating the input.
 
 ```python
+from PIL import Image
 import seamcarver
 
 result = seamcarver.resize(
-    "examples/medium.jpg",
-    height=240,
-    width=400,
-    method=seamcarver.SobelEnergy(),
+    "examples/large.jpg",
+    width=1000,
+    height=700,
 )
+
+Image.fromarray(result).save("large_resized_1000x700.jpg")
 ```
 
-Request a reusable plan when a preview must show the exact pixels removed from
-the result:
+Use `plan()` when the carved result and preview must use the same seam
+decisions:
 
 ```python
 resize_plan = seamcarver.plan(
-    "examples/medium.jpg",
-    height=240,
-    width=400,
+    "examples/large.jpg",
+    width=1000,
+    height=700,
 )
 
 preview = resize_plan.preview()
 result = resize_plan.result()
 ```
 
-For a sequence of operations, pass each result into the next call:
+Both output methods return independent arrays. Calling either method does not
+change the plan.
 
-```python
-image = seamcarver.resize("examples/medium.jpg", height=260, width=450)
-image = seamcarver.resize(image, height=240, width=400)
-```
+See the [Python API guide](docs/api.md) for input rules, custom energy methods,
+errors, and the advanced seam-calculation interface.
 
-Older beta revisions exposed a mutable `SeamCarver` class. It has been removed
-in favor of explicit input-to-output operations.
+## Documentation
 
-## Architecture
-
-### Public operations (`seamcarver/core.py`)
-
-`resize()` returns an owned transformed image. `plan()` computes reusable seam
-decisions for matching carved and highlighted outputs.
-
-### `SeamCalculator` (`seamcarver/calculator.py`)
-
-Core algorithm layer that computes energy maps, builds cumulative DP cost tables, backtracks minimum seams, and returns seam masks for removal/highlighting.
-
-This is an advanced interface. Import it from `seamcarver.calculator`.
-
-### Energy interface + implementations (`seamcarver/methods/`)
-
-`EnergyMethod` remains an optional abstract base class. The built-in
-`GradientEnergy`, `SobelEnergy`, and `LaplacianEnergy` callables are
-interchangeable. Import `EnergyMethod` from `seamcarver.methods`; the built-in
-methods are also available from the top-level package.
-
-### CLI layer (`seamcarver/cli.py`)
-
-Argument parsing, command routing, logging setup, and operational error handling.
-
-## Seam Carving Algorithm Overview
-
-1. Compute an energy map from the current image.
-2. Build cumulative minimum costs row-by-row with dynamic programming.
-3. Backtrack from the lowest-cost endpoint to recover the minimum seam.
-4. Convert seam locations into masks and remove/highlight seam pixels.
-5. Repeat iteratively until the requested resize/removal target is reached.
-
-## Energy Methods
-
-- **GradientEnergy**: gradient-magnitude based pixel importance
-- **SobelEnergy**: Sobel operator on grayscale image
-- **LaplacianEnergy**: Laplacian operator on grayscale image
-
-Custom methods may be plain functions, callable objects, or `EnergyMethod`
-subclasses implementing `__call__(image) -> np.ndarray`.
-
-## Optimization Notes
-
-Current implementation includes several practical optimizations:
-
-- Vectorized cumulative-cost updates in DP row transitions
-- Transpose-based abstraction to unify horizontal/vertical seam logic
-- Boolean-mask reshape strategy for seam removal
-- Source-coordinate tracking across repeated seam removals
+- [Python API](docs/api.md)
+- [Algorithm overview](docs/algorithm-overview.md)
+- [Architecture](docs/architecture.md)
+- [Design decisions](docs/design-decisions.md)
+- [Benchmarking](docs/benchmarking.md)
 
 ## Development
 
-Install the locked development environment and run the repository checks:
+Run the repository checks from the project root:
 
 ```bash
-uv sync --extra dev --frozen
 uv run --frozen ruff check src tests benchmarks
 uv run --frozen black --check --target-version py310 src tests benchmarks
 uv run --frozen mypy
 uv run --frozen pytest
+uv run --frozen pytest --doctest-modules src/seamcarver
 ```
 
-## Benchmarking
-
-The benchmark suite uses deterministic generated images and runs separately
-from the unit tests:
+Benchmarks run separately:
 
 ```bash
 uv run --frozen pytest benchmarks
 ```
 
-See the [benchmark methodology](docs/benchmarking.md) for the measured cases
-and comparison procedure.
-
-## Repository Structure
-
-- `seamcarver/core.py`  
-  Public orchestration API for seam carving operations.
-- `seamcarver/calculator.py`  
-  Dynamic-programming seam search and seam-mask generation.
-- `seamcarver/methods/`  
-  Energy abstraction (`EnergyMethod`) and method implementations.
-- `seamcarver/cli.py`  
-  Command-line interface and operational logging.
-- `seamcarver/_image.py`, `seamcarver/_validation.py`
-  Internal image normalization and public-parameter validation.
-- `seamcarver/logger.py`
-  CLI logging configuration.
-- `tests/`  
-  Unit/integration tests for API and CLI behavior.
-- `benchmarks/`  
-  Benchmark fixtures and performance test support.
-- `examples/`  
-  Sample images and generated visual outputs.
-
 ## Limitations
 
-- Current implementation supports seam **removal** (not seam insertion/expansion).
-- Quality depends on the selected energy method and image content.
-- Extreme reductions can still introduce visual artifacts.
-
-## Future Work
-
-- Seam insertion for content-aware expansion
-- Forward-energy variants and additional energy models
-- Larger benchmark suite and published reference results
-- Optional GPU/parallel acceleration experiments
+- Only shrinking is supported.
+- Width is reduced before height when both dimensions change.
+- Results depend on the image and selected energy method.
+- Large reductions can distort important content.
 
 ## License
 
-MIT License. See `LICENSE`.
-
-## Attributions
-
-- Algorithm concept: [Seam Carving (Wikipedia)](https://en.wikipedia.org/wiki/Seam_carving)
+[MIT](LICENSE)
