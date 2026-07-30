@@ -1,26 +1,26 @@
-"""
-A command-line interface for the seam carving image processing tool.
+"""Command-line image resizing, removal, and highlighting."""
 
-This module provides a command-line interface for the seam carving tool,
-allowing users to resize images, remove seams, and save seam previews.
-"""
-
-# Import standard library packages
-import argparse as ap
 import logging
+from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
-from typing import Sequence
+from typing import Annotated, Literal
 
+from cyclopts import App, CycloptsError, Parameter
+from cyclopts.help import ColumnSpec, DefaultFormatter, DescriptionRenderer, HelpEntry
 from PIL import Image
 
-# Import project-specific packages
 from ._image import normalize_image
 from ._plan import DEFAULT_HIGHLIGHT_COLOR
 from ._validation import validate_num_seams
 from .core import plan, resize
 from .logger import setup_cli_logging
 from .methods import EnergyMethod, GradientEnergy, LaplacianEnergy, SobelEnergy
+
+EnergyName = Literal["gradient", "sobel", "laplacian"]
+Direction = Literal["vertical", "horizontal"]
+CommandName = Literal["resize", "remove", "highlight"]
 
 _ENERGY_METHODS: dict[str, type[EnergyMethod]] = {
     "gradient": GradientEnergy,
@@ -29,167 +29,228 @@ _ENERGY_METHODS: dict[str, type[EnergyMethod]] = {
 }
 
 
-def main(argv: Sequence[str] | None = None) -> None:
-    # Create argument parsers for different command options
-    save_parser = ap.ArgumentParser(add_help=False)
-    save_parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        default=None,
-        help="Output path. A descriptive name is used when omitted.",
-    )
+def _short_names(entry: HelpEntry) -> str:
+    return " ".join(entry.positive_shorts)
 
-    energy_parser = ap.ArgumentParser(add_help=False)
-    energy_parser.add_argument(
-        "--energy",
-        choices=_ENERGY_METHODS,
-        default="gradient",
-        help="Energy method used to rank pixels.",
-    )
 
-    direction_parser = ap.ArgumentParser(add_help=False)
-    direction_parser.add_argument(
-        "-d",
-        "--direction",
-        choices=["vertical", "horizontal"],
-        default="vertical",
-        metavar="DIR",
-        type=str,
-        help="Direction of seams to process (vertical or horizontal).",
-    )
-    direction_parser.add_argument(
-        "-c", "--count", type=int, default=1, help="Number of seams to process."
-    )
+def _long_names(entry: HelpEntry) -> str:
+    return " ".join(entry.positive_names)
 
-    # Create the main argument parser
-    parser = ap.ArgumentParser(
-        prog="seamcarver",
-        description="A command-line tool for seam carving images.",
-        formatter_class=ap.ArgumentDefaultsHelpFormatter,
-    )
 
-    # Add global arguments
-    parser.add_argument(
-        "input", type=str, help="Path to the input image file for seam carving."
-    )
-    parser.add_argument(
-        "-l",
-        "--log-file",
-        type=str,
-        default=None,
-        help="Path to save the log file.",
-        metavar="LOG",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Enable verbose output for debugging purposes.",
-    )
-    parser.add_argument(
-        "-q",
-        "--quiet",
-        action="store_true",
-        help="Suppress all output except warnings and errors.",
-    )
+_HELP_COLUMNS = (
+    ColumnSpec(
+        renderer=lambda entry: "*" if entry.required else "",
+        width=1,
+        style="red bold",
+    ),
+    ColumnSpec(renderer=_short_names, width=2, style="cyan"),
+    ColumnSpec(renderer=_long_names, no_wrap=True, style="cyan"),
+    ColumnSpec(renderer=DescriptionRenderer(), overflow="fold"),
+)
 
-    # Create subparsers for different commands
-    subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # Add the resize command
-    resize_parser = subparsers.add_parser(
+def _format_usage_error(error: CycloptsError) -> str:
+    command = " ".join(("seamcarver", *(error.command_chain or ()), "--help"))
+    return f"Error: {error}\nTry '{command}' for more information."
+
+
+app = App(
+    name="seamcarver",
+    help="A command-line tool for seam carving images.",
+    default_parameter=Parameter(negative=False),
+    help_formatter=DefaultFormatter(column_specs=_HELP_COLUMNS),
+    help_on_error=False,
+    error_formatter=_format_usage_error,
+    version_flags=(),
+    result_action="return_value",
+)
+
+
+@Parameter(name="*")
+@dataclass(frozen=True)
+class CommonOptions:
+    """Options shared by all image operations.
+
+    Parameters
+    ----------
+    output
+        Output path. A descriptive name is used when omitted.
+    energy
+        Energy method used to rank pixels.
+    log_file
+        Path to save the log file.
+    verbose
+        Enable verbose debugging output.
+    quiet
+        Suppress output except warnings and errors.
+    """
+
+    output: Annotated[Path | None, Parameter(alias="-o")] = None
+    energy: Annotated[EnergyName, Parameter(alias="-e")] = "gradient"
+    log_file: Annotated[Path | None, Parameter(alias="-l")] = None
+    verbose: Annotated[bool, Parameter(alias="-v")] = False
+    quiet: Annotated[bool, Parameter(alias="-q")] = False
+
+
+@app.command(name="resize", sort_key=0)
+def resize_command(
+    input: Path,
+    width: int,
+    height: int,
+    *,
+    options: CommonOptions = CommonOptions(),
+) -> None:
+    """Resize an image by removing seams.
+
+    Parameters
+    ----------
+    input
+        Path to the input image file.
+    width
+        Output width.
+    height
+        Output height.
+    """
+    _execute(
         "resize",
-        help="Resize the image by removing seams.",
-        parents=[save_parser, energy_parser],
-        formatter_class=ap.ArgumentDefaultsHelpFormatter,
+        input,
+        options,
+        height=height,
+        width=width,
     )
-    resize_parser.add_argument("height", type=int, help="Output height.")
-    resize_parser.add_argument("width", type=int, help="Output width.")
 
-    # Add the remove command
-    subparsers.add_parser(
+
+@app.command(name="remove", sort_key=1)
+def remove_command(
+    input: Path,
+    *,
+    direction: Annotated[Direction, Parameter(alias="-d")] = "vertical",
+    count: Annotated[int, Parameter(alias="-c")] = 1,
+    options: CommonOptions = CommonOptions(),
+) -> None:
+    """Remove seams from an image.
+
+    Parameters
+    ----------
+    input
+        Path to the input image file.
+    direction
+        Direction of seams to remove.
+    count
+        Number of seams to remove.
+    """
+    _execute(
         "remove",
-        help="Remove seams from the image.",
-        parents=[save_parser, direction_parser, energy_parser],
-        formatter_class=ap.ArgumentDefaultsHelpFormatter,
+        input,
+        options,
+        direction=direction,
+        count=count,
     )
 
-    # Add the highlight command
-    highlight_parser = subparsers.add_parser(
+
+@app.command(name="highlight", sort_key=2)
+def highlight_command(
+    input: Path,
+    width: int,
+    height: int,
+    *,
+    rgb: Annotated[
+        tuple[int, int, int],
+        Parameter(alias="-r"),
+    ] = DEFAULT_HIGHLIGHT_COLOR,
+    options: CommonOptions = CommonOptions(),
+) -> None:
+    """Highlight the pixels removed to reach target dimensions.
+
+    Parameters
+    ----------
+    input
+        Path to the input image file.
+    width
+        Target width.
+    height
+        Target height.
+    rgb
+        RGB highlight color.
+    """
+    _execute(
         "highlight",
-        help="Highlight seams in the image.",
-        parents=[save_parser, direction_parser, energy_parser],
-        formatter_class=ap.ArgumentDefaultsHelpFormatter,
-    )
-    highlight_parser.add_argument(
-        "-r",
-        "--rgb",
-        nargs=3,
-        type=int,
-        default=DEFAULT_HIGHLIGHT_COLOR,
-        help="Color to highlight pixels in, as a tuple in RGB format.",
-        metavar=("R", "G", "B"),
+        input,
+        options,
+        height=height,
+        width=width,
+        rgb=rgb,
     )
 
-    # Get the command line inputs
-    args = parser.parse_args(argv)
 
-    # Set up logging based on the command line arguments
+def _execute(
+    command: CommandName,
+    input: Path,
+    options: CommonOptions,
+    *,
+    height: int | None = None,
+    width: int | None = None,
+    direction: Direction | None = None,
+    count: int | None = None,
+    rgb: tuple[int, int, int] = DEFAULT_HIGHLIGHT_COLOR,
+) -> None:
     logger = setup_cli_logging(
-        verbose=args.verbose,
-        quiet=args.quiet,
-        log_file=args.log_file,
+        verbose=options.verbose,
+        quiet=options.quiet,
+        log_file=None if options.log_file is None else str(options.log_file),
     )
 
     try:
-        logger.info(f"Loading image from {args.input}...")
-        image = normalize_image(args.input)
+        logger.info(f"Loading image from {input}...")
+        image = normalize_image(input)
         logger.debug(f"Image loaded with shape {image.shape}.")
-        output_path = _get_output_path(args)
-        method = _ENERGY_METHODS[args.energy]()
+        method = _ENERGY_METHODS[options.energy]()
+
+        if command == "remove":
+            assert direction is not None and count is not None
+            target_height, target_width = image.shape[:2]
+            if direction == "vertical":
+                count = validate_num_seams(count, target_width)
+                target_width -= count
+            else:
+                count = validate_num_seams(count, target_height)
+                target_height -= count
+            descriptor = f"removed_{count}_{direction}"
+        else:
+            assert height is not None and width is not None
+            target_height, target_width = height, width
+            descriptor = f"{'resized' if command == 'resize' else 'highlighted'}"
+            descriptor += f"_{width}x{height}"
+
+        output_path = _get_output_path(input, options.output, descriptor)
         started = perf_counter()
 
-        if args.command == "resize":
-            logger.info(f"Resizing image to {args.height}x{args.width}...")
+        if command == "resize":
+            logger.info(f"Resizing image to {width}x{height}...")
             result = resize(
                 image,
-                height=args.height,
-                width=args.width,
+                height=target_height,
+                width=target_width,
                 method=method,
             )
             logger.info("Image resized successfully.")
-
         else:
-            height, width = image.shape[:2]
-            if args.direction == "vertical":
-                count = validate_num_seams(args.count, width)
-                width -= count
+            if command == "remove":
+                logger.info(f"Removing {count} seams in {direction} direction...")
             else:
-                count = validate_num_seams(args.count, height)
-                height -= count
-
-            if args.command == "remove":
-                logger.info(
-                    f"Removing {args.count} seams in {args.direction} direction..."
-                )
-            else:
-                logger.info(
-                    f"Highlighting {args.count} seams in "
-                    f"{args.direction} direction..."
-                )
+                logger.info(f"Highlighting removals for resize to {width}x{height}...")
 
             resize_plan = plan(
                 image,
-                height=height,
-                width=width,
+                height=target_height,
+                width=target_width,
                 method=method,
             )
-            if args.command == "remove":
+            if command == "remove":
                 result = resize_plan.result()
                 logger.info("Seams removed successfully.")
             else:
-                result = resize_plan.preview(args.rgb)
+                result = resize_plan.preview(rgb)
                 logger.info("Seams highlighted successfully.")
 
         elapsed = perf_counter() - started
@@ -201,7 +262,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         logger.warning("Operation cancelled by user.")
         raise SystemExit(130) from None
     except Exception as error:
-        handle_error(error, logger, verbose=args.verbose)
+        handle_error(error, logger, verbose=options.verbose)
         raise SystemExit(1) from None
 
 
@@ -210,8 +271,7 @@ def handle_error(
     logger: logging.Logger,
     verbose: bool = False,
 ) -> None:
-    """Handle errors with logger messages."""
-
+    """Write an actionable message for an image-processing failure."""
     if isinstance(error, FileExistsError):
         logger.error(str(error))
         logger.error("Choose another output path and try again.")
@@ -241,25 +301,24 @@ def handle_error(
         logger.debug("Error details:", exc_info=error)
 
 
-def _get_output_path(args: ap.Namespace) -> Path:
+def _get_output_path(
+    input: Path,
+    output: Path | None,
+    descriptor: str,
+) -> Path:
     """Return an unused explicit or derived output path."""
-    if args.output is not None:
-        output_path = Path(args.output)
-    else:
-        input_path = Path(args.input)
-        suffix = input_path.suffix or ".png"
-        if args.command == "resize":
-            descriptor = f"resized_{args.width}x{args.height}"
-        elif args.command == "remove":
-            descriptor = f"removed_{args.count}_{args.direction}"
-        else:
-            descriptor = f"highlighted_{args.count}_{args.direction}"
-        output_path = Path.cwd() / f"{input_path.stem}_{descriptor}{suffix}"
+    if output is None:
+        suffix = input.suffix or ".png"
+        output = Path.cwd() / f"{input.stem}_{descriptor}{suffix}"
 
-    if output_path.exists():
-        raise FileExistsError(f"Output path already exists: {output_path}")
-    return output_path
+    if output.exists():
+        raise FileExistsError(f"Output path already exists: {output}")
+    return output
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    app(argv)
 
 
 if __name__ == "__main__":
-    main(argv=None)
+    main()

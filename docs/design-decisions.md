@@ -80,7 +80,7 @@ result contract.
 
 - Gradient border energy lives in the gradient implementation.
 - The default highlight color lives with `ResizePlan`.
-- CLI directions remain the strings accepted by `argparse`.
+- CLI directions remain string values owned by the `remove` command.
 
 The retired `HORIZONTAL` and `VERTICAL` integers had no meaning after the
 stateful directional methods were removed. Local ownership makes each value's
@@ -92,6 +92,10 @@ scope and compatibility status clear.
 
 The CLI owns argument parsing, paths, saving, logging, and exit behavior. It
 maps `resize`, `remove`, and `highlight` commands onto `resize()` and `plan()`.
+Cyclopts derives the command-first interface and help text from typed function
+signatures and docstrings. `highlight` accepts target dimensions so its preview
+matches a resize request. Positional CLI dimensions use the image convention
+`WIDTH HEIGHT`; internal NumPy shapes remain height then width.
 When `--output` is omitted, the CLI writes a descriptively named file in the
 current directory. It refuses to overwrite an existing path. The command
 vocabulary remains independent from the Python API shape.
