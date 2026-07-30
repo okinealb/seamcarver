@@ -11,7 +11,7 @@ from cyclopts import App, CycloptsError, Parameter
 from cyclopts.help import ColumnSpec, DefaultFormatter, DescriptionRenderer, HelpEntry
 from PIL import Image
 
-from ._image import normalize_image
+from ._image import ImageDecodeError, normalize_image
 from ._plan import DEFAULT_HIGHLIGHT_COLOR
 from ._validation import validate_num_seams
 from .core import plan, resize
@@ -283,12 +283,11 @@ def handle_error(
         logger.error(
             "Please check file permissions or run the command with elevated privileges."
         )
+    elif isinstance(error, ImageDecodeError):
+        logger.error("Invalid image file format.")
+        logger.error("Use one of the PIL supported formats: PNG, JPEG, BMP, etc.")
     elif isinstance(error, ValueError):
-        if "Could not load image from path" in str(error):
-            logger.error("Invalid image file format.")
-            logger.error("Use one of the PIL supported formats: PNG, JPEG, BMP, etc.")
-        else:
-            logger.error(f"Invalid input: {error}")
+        logger.error(f"Invalid input: {error}")
     elif isinstance(error, MemoryError):
         logger.error("Not enough memory to process the image.")
         logger.error("Try using a smaller image or increasing available memory.")

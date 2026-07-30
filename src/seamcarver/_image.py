@@ -13,6 +13,10 @@ ImageInput: TypeAlias = (
 )
 
 
+class ImageDecodeError(ValueError):
+    """Raised when a filesystem image cannot be decoded."""
+
+
 def normalize_image(image: ImageInput) -> ImageArray:
     """Return an owned RGB uint8 array for a supported image input."""
     if isinstance(image, np.ndarray):
@@ -71,7 +75,7 @@ def _from_path(path: str | os.PathLike[str]) -> ImageArray:
     except FileNotFoundError:
         raise
     except (OSError, ValueError) as error:
-        raise ValueError(f"Could not decode image from path: {path}") from error
+        raise ImageDecodeError(f"Could not decode image from path: {path}") from error
 
 
 def _validate_rgb_shape(image: npt.NDArray[np.generic], source: str) -> None:
