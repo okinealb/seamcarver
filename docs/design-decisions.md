@@ -116,11 +116,28 @@ runtime invariants because current type annotations do not encode dimensions.
 
 ## 9. Versioning during beta
 
-**Decision:** Do not change version `0.5.1` for this internal migration.
+**Decision:** The earlier internal API migration did not change version
+`0.5.1`.
 
-The intended distribution has not been released. The final package name and
-release version will be chosen during release preparation. Documentation records
-the removed beta interface so older local callers have a migration path.
+The intended distribution had not been released. Documentation records the
+removed beta interface so older local callers have a migration path.
+
+## 10. Distribution and package identity
+
+**Decision:** Use `seamop` for the distribution, import package, and command,
+with SeamOp as the display name. Begin this identity at version `0.1.0`.
+
+The original paper describes seam carving as an image operator. That term
+continues to fit seam removal, future insertion, alternative energy policies,
+and planning without tying the project to one implementation. One shared name
+keeps installation, imports, and command examples consistent.
+
+The earlier `seamcarver` identity was never published as this project's
+intended distribution, and that PyPI name belongs to an unrelated project. No
+compatibility package or command alias is provided.
+
+Version `0.1.0` begins the project's release history. Earlier versions were
+internal progress markers rather than releases of the intended distribution.
 
 ## Deferred work
 

@@ -34,7 +34,7 @@ Built-in methods are:
 
 ## One-seam search
 
-`cumulative_costs()` in `src/seamcarver/_search.py` creates a `float64` cost
+`cumulative_costs()` in `src/seamop/_search.py` creates a `float64` cost
 table from the `float32` energy map. The wider accumulator prevents finite
 per-pixel values from overflowing during path accumulation.
 
@@ -52,7 +52,7 @@ construction are typically `O(HW)`. Backtracking is `O(H)`.
 
 ## Repeated seam planning
 
-`find_seams()` in `src/seamcarver/_planner.py` owns repeated search:
+`find_seams()` in `src/seamop/_planner.py` owns repeated search:
 
 1. Copy the image and create a flat source-index map.
 2. Compute energy for the current image.
@@ -66,7 +66,7 @@ performance experiments.
 
 ## Width and height reduction
 
-`build_plan()` in `src/seamcarver/_plan.py` reduces width first. It applies each
+`build_plan()` in `src/seamop/_plan.py` reduces width first. It applies each
 seam mask to both the working image and its source-coordinate map.
 
 To reduce height, it transposes the current image and coordinate map, reuses the
