@@ -41,7 +41,7 @@ def setup_cli_logging(
         log_file: Optional file to write detailed logs
         color: Use colored output (auto-detected for terminals)
     """
-    logger = logging.getLogger("seamcarver.cli")
+    logger = logging.getLogger("seamop.cli")
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
         handler.close()

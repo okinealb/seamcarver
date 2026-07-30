@@ -20,7 +20,7 @@ class SeamCalculator:
 
     Examples:
         >>> import numpy as np
-        >>> from seamcarver.calculator import SeamCalculator
+        >>> from seamop.calculator import SeamCalculator
         >>> image = np.zeros((4, 5, 3), dtype=np.uint8)
         >>> calculator = SeamCalculator()
         >>> seam_mask = calculator(image, num_seams=2)

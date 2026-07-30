@@ -18,7 +18,7 @@ class EnergyMethod(ABC):
 
     Examples:
         >>> import numpy as np
-        >>> from seamcarver.methods import EnergyMethod
+        >>> from seamop.methods import EnergyMethod
         >>> class CustomEnergy(EnergyMethod):
         ...     def __call__(self, image: np.ndarray) -> np.ndarray:
         ...         return image[..., 0].astype(np.float32)

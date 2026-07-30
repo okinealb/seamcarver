@@ -50,12 +50,12 @@ _HELP_COLUMNS = (
 
 
 def _format_usage_error(error: CycloptsError) -> str:
-    command = " ".join(("seamcarver", *(error.command_chain or ()), "--help"))
+    command = " ".join(("seamop", *(error.command_chain or ()), "--help"))
     return f"Error: {error}\nTry '{command}' for more information."
 
 
 app = App(
-    name="seamcarver",
+    name="seamop",
     help="A command-line tool for seam carving images.",
     default_parameter=Parameter(negative=False),
     help_formatter=DefaultFormatter(column_specs=_HELP_COLUMNS),

@@ -17,7 +17,7 @@ DEFAULT_HIGHLIGHT_COLOR = (255, 0, 0)
 class ResizePlan:
     """A completed resize and its source-pixel removals.
 
-    Create plans with :func:`seamcarver.plan` rather than constructing this
+    Create plans with :func:`seamop.plan` rather than constructing this
     class directly.
     """
 
