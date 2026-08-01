@@ -112,8 +112,8 @@ The top-level public surface is:
 `EnergyMethod` remains available from `seamop.methods`.
 
 The mutable `SeamCarver` compatibility class and numeric direction constants
-were retired during beta. The intended distribution remains unreleased, so the
-version will be chosen during release preparation.
+were retired during beta. The `seamop` distribution was first published at
+version `0.1.0`, with a matching Git tag and GitHub Release.
 
 Internal seam arrays, source-coordinate maps, cost tables, planner controls, and
 default implementation constants remain private.
