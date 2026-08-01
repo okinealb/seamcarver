@@ -9,7 +9,7 @@ instead of scaling every pixel or cropping a fixed region.
 
 | Original (1428 × 968) | Resized (1000 × 900) |
 | --- | --- |
-| ![Original castle image](examples/large.jpg) | ![Content-aware resized castle image](examples/large_resized.jpg) |
+| ![Original castle image](https://raw.githubusercontent.com/okinealb/seamop/main/examples/large.jpg) | ![Content-aware resized castle image](https://raw.githubusercontent.com/okinealb/seamop/main/examples/large_resized.jpg) |
 
 The current beta supports shrinking by seam removal. Enlargement and seam
 insertion are not implemented.
