@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "python",
+  "include-component-in-tag": false,
+  "include-v-in-tag": true,
+  "bump-minor-pre-major": true,
+  "pull-request-header": "Updates the package version and release notes for the next release.",
+  "pull-request-footer": "Review the version, changelog, lockfile, and required checks before merging.",
+  "packages": {
+    ".": {
+      "package-name": "seamop"
+    }
+  }
+}
