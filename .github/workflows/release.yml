@@ -1,0 +1,99 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build release distributions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.31"
+          python-version: "3.10"
+          enable-cache: true
+
+      - name: Verify tag matches project version
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag_version="${GITHUB_REF_NAME#v}"
+          project_version="$(uv version --short)"
+
+          if [[ "$tag_version" != "$project_version" ]]; then
+            echo "Tag version $tag_version does not match project version $project_version." >&2
+            exit 1
+          fi
+
+      - name: Check lockfile
+        run: uv lock --check
+
+      - name: Install project
+        run: uv sync --extra dev --frozen
+
+      - name: Lint
+        run: uv run --frozen ruff check src tests benchmarks
+
+      - name: Check formatting
+        run: uv run --frozen ruff format --check src tests benchmarks
+
+      - name: Type check
+        run: uv run --frozen mypy
+
+      - name: Check coverage
+        run: uv run --frozen pytest --cov
+
+      - name: Check docstring examples
+        run: uv run --frozen pytest --doctest-modules src/seamop
+
+      - name: Build package
+        run: uv build --no-sources
+
+      - name: Store distribution packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: Publish distribution packages to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    environment:
+      name: pypi
+      url: https://pypi.org/project/seamop/
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Retrieve distribution packages
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish distribution packages to PyPI
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
