@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/okinealb/seamop/compare/v0.1.2...v0.1.3) (2026-08-02)
+
+
+### Documentation
+
+* document seam removal command ([#41](https://github.com/okinealb/seamop/issues/41)) ([fa3707d](https://github.com/okinealb/seamop/commit/fa3707df0330efd51cd623cfbe3b729694b0f827))
+
 ## [0.1.2](https://github.com/okinealb/seamop/compare/v0.1.1...v0.1.2) (2026-08-01)
 
 
