@@ -45,6 +45,12 @@ Preview the pixels that the same resize would remove:
 seamop highlight examples/medium.jpg 400 240
 ```
 
+Remove ten vertical seams:
+
+```bash
+seamop remove examples/medium.jpg --direction vertical --count 10
+```
+
 Other commands and options are available through the built-in help:
 
 ```bash
