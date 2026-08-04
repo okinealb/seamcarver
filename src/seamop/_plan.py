@@ -128,8 +128,11 @@ def _remove(
     """Remove planned seams from an oriented image and its source map."""
     mask = calculator(image, num_seams)
     height = image.shape[0]
+    flat_mask = mask.ravel()
+    flat_image = image.reshape(-1, 3)
+    flat_indices = source_indices.ravel()
     return (
-        image[~mask].reshape(height, -1, 3),
-        source_indices[~mask].reshape(height, -1),
-        source_indices[mask],
+        np.compress(~flat_mask, flat_image, axis=0).reshape(height, -1, 3),
+        np.compress(~flat_mask, flat_indices).reshape(height, -1),
+        np.compress(flat_mask, flat_indices),
     )
