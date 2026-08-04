@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/okinealb/seamop/compare/v0.1.3...v0.1.4) (2026-08-04)
+
+
+### Performance Improvements
+
+* reduce seam compaction overhead ([f3927ee](https://github.com/okinealb/seamop/commit/f3927ee322cca3505d81a69a9cc824efe998a671))
+
 ## [0.1.3](https://github.com/okinealb/seamop/compare/v0.1.2...v0.1.3) (2026-08-02)
 
 
