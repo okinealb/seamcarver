@@ -35,8 +35,13 @@ def find_seams(
             raise RuntimeError("Seam extraction made no progress.")
 
         num_seams -= found
-        image = image[~seams].reshape(height, -1, 3)
-        kept = kept[~seams.ravel()]
+        flat_seams = seams.ravel()
+        image = np.compress(
+            ~flat_seams,
+            image.reshape(-1, 3),
+            axis=0,
+        ).reshape(height, -1, 3)
+        kept = np.compress(~flat_seams, kept)
 
     mask = np.ones(height * width, dtype=bool)
     mask[kept] = False
