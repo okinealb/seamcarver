@@ -68,3 +68,34 @@ measurements, and variability.
 Use the same machine, power conditions, Python version, lockfile, and command
 for both runs. Close unrelated CPU-intensive programs first. Results from
 different environments are not directly comparable.
+
+## v0.1.4 reference run
+
+The current reference was measured at commit `23be2ca` (`v0.1.4`) on an Apple
+M2 MacBook Air with eight cores, arm64, CPython 3.10.20, and
+pytest-benchmark 5.2.3. It used NumPy seed `42`, one warmup round, and five
+measured rounds. The table reports median time for each case.
+
+| Seams | 512 × 512 | 1024 × 1024 | 2048 × 2048 |
+| ---: | ---: | ---: | ---: |
+| 1 | 16.61 ± 0.39 ms | 61.68 ± 0.30 ms | 238.24 ± 20.73 ms |
+| 5 | 160.48 ± 50.85 ms | 250.25 ± 22.57 ms | 938.14 ± 28.23 ms |
+| 50 | 607.49 ± 3.16 ms | 2.27 ± 0.08 s | 8.72 ± 0.08 s |
+| 200 | 2.08 ± 0.01 s | 8.28 ± 0.03 s | 33.24 ± 0.12 s |
+
+These numbers are a same-machine reference, not a performance guarantee. A
+future comparison should report the same environment, command, inputs, and
+standard deviation before drawing a conclusion.
+
+## Quality comparisons
+
+The test suite checks output dimensions, seam counts, single-seam connectivity,
+input preservation, deterministic plans, and agreement between plan results and
+previews. It does not reduce visual quality to one score.
+
+For an algorithm change, compare the current and candidate implementations on
+`examples/medium.jpg` at 400 × 240 and `examples/large.jpg` at 1000 × 900.
+Generate both the resized image and the matching highlight preview, then inspect
+them side by side and record visible artifacts or unwanted content loss with
+the performance results. Keep comparison outputs temporary unless a case needs
+to become a permanent fixture.
