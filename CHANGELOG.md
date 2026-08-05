@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/okinealb/seamop/compare/v0.1.4...v0.1.5) (2026-08-05)
+
+
+### Documentation
+
+* record v0.1.4 benchmark baseline ([#45](https://github.com/okinealb/seamop/issues/45)) ([32d5981](https://github.com/okinealb/seamop/commit/32d5981a314e6059873070accff0006d2924002d))
+
 ## [0.1.4](https://github.com/okinealb/seamop/compare/v0.1.3...v0.1.4) (2026-08-04)
 
 
